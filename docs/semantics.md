@@ -1,4 +1,4 @@
-# ml666 semantics
+# ML666 semantics
 
 This is about the format and how tokenizers & parsers are to treat it in general. For details about the implementation
 provided in this repo, see [ml666.md](ml666.md).
@@ -20,10 +20,10 @@ the tokenizer shall apply the following additional transformations:
 
 * For `plain_string` and `multiline_comment`: If the first character is a newline, remove it. If the last line only contains `SP` " " characters,
   and is precided but not followed by a newline, remove that line, including the preceding newline. The string / comment
-  delimiters  `` / /**/ / //  should not be included in returned token content.
+  delimiters  `` / /**/ / //  should not be included in the returned token content.
 * For `hex_string` and `base64_string`: The parser should decode the content as hex or base64 correspondingly, and return the result as a token.
   The `base64_string` may also contain base64url encoded content, the decoding has to be relaxed to that end. Spaces can be anywhere and do not
-  affect the en/decoding. Note that the ABNF syntax does not permit incomplete base64url or hex strings.
+  affect the en/decoding. Note that the ML666 syntax does not permit incomplete base64url or hex strings.
 
 
 A tokenizer or parser may or may not choose to emit comments. It is also up to the implementation, if different adjacent strings where allowed are
