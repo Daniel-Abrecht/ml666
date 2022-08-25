@@ -3,9 +3,9 @@
   <bla>
     `Lorem <ipsum>\ndolor \`sit amet\`.`
     /*
-      This is a "comment"
+      \* This is a "comment"
     */
-    // This is another comment
+    // This is another *comment*
     `
 At sequi illo in dolorem voluptatibus ut consequatur asperiores est
 voluptatem velit. Quo voluptatum dolores ut itaque incidunt eos
@@ -84,8 +84,6 @@ And here again, but they should be removed:
     mow=`1`
     /* The following is an Attribute named // */
     \/\/
-    /* The following is an unnamed attribute with a value of 123 */
-    =`123`
   />
   <nya></\x6Eya>
   <Kitty\ Cat/>

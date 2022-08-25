@@ -338,7 +338,9 @@ bool ml666_tokenizer_next(struct ml666_tokenizer* _tokenizer){
           }else{
             column += 1;
             switch(ch){
-              case '\\': case '/': case '>': case '`': case '=': case ' ': break;
+              case '*': case '/': case '>':
+              case '`': case '=': case ' ':
+              case '\\': break;
               case 'a': ch = '\a'  ; break;
               case 'b': ch = '\b'  ; break;
               case 'e': ch = '\x1B'; break;
@@ -440,6 +442,10 @@ bool ml666_tokenizer_next(struct ml666_tokenizer* _tokenizer){
           switch(ch){
             case '>': state = ML666__STATE_MEMBER; break;
             case '/': state = ML666__STATE_SELF_CLOSE; break;
+            case '=': {
+              tokenizer->public.error = "Empty attributes are not allowed";
+              goto error;
+            }; break;
             default : state = ML666__STATE_ATTRIBUTE; continue;
           }
         } break;
