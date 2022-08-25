@@ -94,14 +94,14 @@ static void init(void){
   const unsigned size = get_ringbuffer_size();
   char*const x = mmap(0, size, PROT_READ|PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
   if(x == MAP_FAILED){
-    fprintf(stderr, "mmap failed (%d): %s", errno, strerror(errno));
+    fprintf(stderr, "%s:%u: mmap failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
     abort();
   }
   x[0] = '\n';
   memset(x+1, ' ', size-1);
   // Make sure only reading is possible. This isn't really necessary, but it'll be handy to avoid & debug accidental drite access
   if(mprotect(x, size, PROT_READ)){
-    fprintf(stderr, "mprotect failed (%d): %s", errno, strerror(errno));
+    fprintf(stderr, "%s:%u: mprotect failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
   }
   space_page = x;
 }
@@ -109,7 +109,7 @@ static void init(void){
 struct ml666_tokenizer* ml666_tokenizer_create(int fd){
   struct ml666__tokenizer_private*restrict tokenizer = calloc(1, sizeof(struct ml666__tokenizer_private));
   if(!tokenizer){
-    fprintf(stderr, "memfd_create failed (%d): %s", errno, strerror(errno));
+    fprintf(stderr, "%s:%u: memfd_create failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
     goto error;
   }
   tokenizer->fd = fd;
@@ -120,43 +120,43 @@ struct ml666_tokenizer* ml666_tokenizer_create(int fd){
 
   const int memfd = memfd_create("ml666 tokenizer ringbuffer", MFD_CLOEXEC);
   if(memfd == -1){
-    fprintf(stderr, "memfd_create failed (%d): %s", errno, strerror(errno));
+    fprintf(stderr, "%s:%u: memfd_create failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
     goto error_calloc;
   }
 
   if(ftruncate(memfd, size) == -1){
-    fprintf(stderr, "ftruncate failed (%d): %s", errno, strerror(errno));
+    fprintf(stderr, "%s:%u: ftruncate failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
     goto error_memfd;
   }
 
   // Allocate any 4 free pages |A|B|C|D
   char*const mem = mmap(0, size*4, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
   if(mem == MAP_FAILED){
-    fprintf(stderr, "mmap failed (%d): %s", errno, strerror(errno));
+    fprintf(stderr, "%s:%u: mmap failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
     goto error_mmap;
   }
 
   // Replace them with the same one, rw  |E|B|C|D|
   if(mmap(mem, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, memfd, 0) == MAP_FAILED){
-    fprintf(stderr, "mmap failed (%d): %s", errno, strerror(errno));
+    fprintf(stderr, "%s:%u: mmap failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
     goto error_mmap;
   }
 
   // Replace them with the same one , rw |E|E|C|D|
   if(mmap(mem+size, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, memfd, 0) == MAP_FAILED){
-    fprintf(stderr, "mmap failed (%d): %s", errno, strerror(errno));
+    fprintf(stderr, "%s:%u: mmap failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
     goto error_mmap;
   }
 
   // Replace them with the same one, ro  |E|E|E|D|
   if(mmap(mem+size*2, size, PROT_READ, MAP_SHARED | MAP_FIXED, memfd, 0) == MAP_FAILED){
-    fprintf(stderr, "mmap failed (%d): %s", errno, strerror(errno));
+    fprintf(stderr, "%s:%u: mmap failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
     goto error_mmap;
   }
 
   // Replace them with the same one, ro |E|E|E|E|
   if(mmap(mem+size*3, size, PROT_READ, MAP_SHARED | MAP_FIXED, memfd, 0) == MAP_FAILED){
-    fprintf(stderr, "mmap failed (%d): %s", errno, strerror(errno));
+    fprintf(stderr, "%s:%u: mmap failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
     goto error_mmap;
   }
 
@@ -717,9 +717,9 @@ error:
 final:
   // Let's free this stuff as early as possible
   if(munmap(tokenizer->memory, size*4))
-    fprintf(stderr, "munmap failed (%d): %s", errno, strerror(errno));
+    fprintf(stderr, "%s:%u: munmap failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
   if(close(tokenizer->fd))
-    fprintf(stderr, "close failed (%d): %s", errno, strerror(errno));
+    fprintf(stderr, "%s:%u: close failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
   tokenizer->fd = -1;
   return false;
 
@@ -731,8 +731,8 @@ void ml666_tokenizer_destroy(struct ml666_tokenizer* _tokenizer){
   const unsigned size = get_ringbuffer_size();
   struct ml666__tokenizer_private*restrict tokenizer = (struct ml666__tokenizer_private*)_tokenizer;
   if(tokenizer->memory && munmap(tokenizer->memory, size*4))
-    fprintf(stderr, "munmap failed (%d): %s", errno, strerror(errno));
+    fprintf(stderr, "%s:%u: munmap failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
   if(tokenizer->fd != -1 && close(tokenizer->fd))
-    fprintf(stderr, "close failed (%d): %s", errno, strerror(errno));
+    fprintf(stderr, "%s:%u: close failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
   free(tokenizer);
 }

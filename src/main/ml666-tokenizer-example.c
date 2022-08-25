@@ -14,14 +14,20 @@ int main(){
   }
   while(ml666_tokenizer_next(tokenizer)){
     if(tokenizer->token){
-      printf("%4zu:%4zu: %c %s [%zu]: ", tokenizer->line, tokenizer->column, tokenizer->complete ? 'c' : 'p', ml666__token_name[tokenizer->token], tokenizer->match.length);
+      printf(
+        "%4zu:%4zu: %c %s [%zu]: ",
+        tokenizer->line, tokenizer->column,
+        tokenizer->complete ? 'c' : 'p',
+        ml666__token_name[tokenizer->token],
+        tokenizer->match.length
+      );
       fflush(stdout);
       ml666__print_buf_escaped(1, tokenizer->match);
       printf("\n");
     }
   }
   if(tokenizer->error){
-    fprintf(stderr, "ml666_parse failed: At %zu,%zu: %s", tokenizer->line, tokenizer->column, tokenizer->error);
+    fprintf(stderr, "ml666_parse failed: At %zu,%zu: %s\n", tokenizer->line, tokenizer->column, tokenizer->error);
     return 1;
   }
   ml666_tokenizer_destroy(tokenizer);
