@@ -38,11 +38,12 @@ endif
 
 OBJECTS := $(patsubst %,build/$(TYPE)/o/%.o,$(SOURCES))
 
-.PHONY: all clean get-bin get-lib install uninstall shell
+.PHONY: all clean get-bin get-lib install uninstall shell test
 
 all: bin/$(TYPE)/ml666-tokenizer-example \
      lib/$(TYPE)/libml666.a \
-     lib/$(TYPE)/libml666.so
+     lib/$(TYPE)/libml666.so \
+     test
 
 get-bin:
 	@echo bin/$(TYPE)/
@@ -67,6 +68,12 @@ build/$(TYPE)/o/%.c.o: %.c makefile $(HEADERS)
 	mkdir -p $(dir $@)
 	$(CC) -fPIC -c -o $@ $(DFLAGS) $(CFLAGS) $<
 
+build/test/%: test/%.ml666 test/%.result bin/$(TYPE)/ml666-tokenizer-example
+	mkdir -p $(dir $@)
+	LD_LIBRARY_PATH="$$PWD/lib/$(TYPE)/" \
+	bin/$(TYPE)/ml666-tokenizer-example <"$<" >"$@.result"
+	diff "$@.result" "$(word 2,$^)" && touch "$@"
+
 clean:
 	rm -rf build/$(TYPE)/ bin/$(TYPE)/ lib/$(TYPE)/
 
@@ -87,3 +94,5 @@ shell:
 	LD_LIBRARY_PATH="$$PWD/lib/$(TYPE)/" \
 	PATH="$$PWD/bin/$(TYPE)/:$$PATH" \
 	  "$$SHELL"
+
+test: build/test/example
