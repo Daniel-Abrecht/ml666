@@ -3,28 +3,31 @@ document_fragment = *(*space member) *space
 
 member = element / TEXT / COMMENT
 
-element_start_1 = "<" TAG *(1*comment_or_space ATTRIBUTE_NAME "=" ATTRIBUTE_VALUE)
-element_start = element_start_1 *comment_or_space ">"
-element_selfclosing = element_start_1 *comment_or_space SELFCLOSING ">"
-element = element_selfclosing / element_start *space document_fragment *space element_end
+element_start_1 = "<" TAG *(1*comment_or_space ATTRIBUTE_NAME ["=" ATTRIBUTE_VALUE]) *comment_or_space
+element_start = element_start_1 ">"
+element_selfclosing = element_start_1 SELFCLOSING ">"
+element = element_selfclosing / element_start document_fragment element_end
 element_end = "</" END_TAG ">"
 
 TAG = *(idchar / "=")
 END_TAG = *(idchar / "=")
 SELFCLOSING = "/"
-ATTRIBUTE_NAME = *idchar
+ATTRIBUTE_NAME = 1*idchar
 ATTRIBUTE_VALUE = string
 TEXT = string
-COMMENT = "/*" *( %x00-29 / %x2B-5B / %x5D-FF / escape ) "*/"
+COMMENT = multiline_comment / comment_line
 
 space = " " / %x0A
 comment_or_space = 1*space / COMMENT
 hexdigit = "0"/"1"/"2"/"3"/"4"/"5"/"6"/"7"/"8"/"9" / "a"/"b"/"c"/"d"/"e"/"f" / "A"/"B"/"C"/"D"/"E"/"F"
 base64digit = %x30-39 / %x41-5A / %x61-7A / "+"/"-" / "/"/"_"
-escape = "\\" (  "\\" / "/" / "`" / ">" / "=" / " "  /  "a"/"b"/"e"/"g"/"n"/"t"/"v"  /  "x" hexdigit hexdigit  )
+escape = "\\" (  "\\" / "/" / "`" / ">" / "=" / " " / "*"  /  "a"/"b"/"e"/"g"/"n"/"t"/"v"  /  "x" hexdigit hexdigit  )
+idchar = escape / %x00-1F / %x21-2E / %x30-3C / %x3F-FF
 
 string = hex_string / base64_string / plain_string
 plain_string = "`" *( %x00-5B / %x5D-5F / %x61-FF / escape ) "`"
 hex_string = "H`" *(*space hexdigit *space hexdigit) *space "`"
 base64_string = "B`" [4(*space base64digit)] [2(*space base64digit) *2[*space base64digit / "="]] *space "`"
-idchar = escape / %x00-1F / %x21-2E / %x30-3C / %x3F-FF
+
+multiline_comment = "/*" *( %x00-29 / %x2B-5B / %x5D-FF / escape ) "*/"
+comment_line = "//" *(%x00-09 / %x0B-FF) %x0A

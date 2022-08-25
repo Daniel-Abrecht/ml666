@@ -19,17 +19,15 @@
       <rr-r id="rr-document_fragment">
         <rr-n>document_fragment</rr-n>
         <rr-rr>
-          <rr-o>
-            <rr-a>
-              <rr-o data-min="0" data-max="inf" class="opt">
-                <rr-a>
-                  <a href="#rr-space" data-min="0" data-max="inf" class="opt">space</a>
-                  <a href="#rr-member">member</a>
-                </rr-a>
-              </rr-o>
-              <a href="#rr-space" data-min="0" data-max="inf" class="opt">space</a>
-            </rr-a>
-          </rr-o>
+          <rr-a>
+            <rr-o data-min="0" data-max="inf" class="opt">
+              <rr-a>
+                <a href="#rr-space" data-min="0" data-max="inf" class="opt">space</a>
+                <a href="#rr-member">member</a>
+              </rr-a>
+            </rr-o>
+            <a href="#rr-space" data-min="0" data-max="inf" class="opt">space</a>
+          </rr-a>
         </rr-rr>
       </rr-r>
       <rr-r id="rr-member">
@@ -38,100 +36,89 @@
           <rr-o>
             <a href="#rr-COMMENT">COMMENT</a>
             <a href="#rr-TEXT">TEXT</a>
-            <a href="#rr-rrlement">element</a>
+            <a href="#rr-element">element</a>
           </rr-o>
         </rr-rr>
       </rr-r>
-      <rr-r id="rr-rrlement_start_1">
+      <rr-r id="rr-element_start_1">
         <rr-n>element_start_1</rr-n>
         <rr-rr>
-          <rr-o>
-            <rr-a>
-              <rr-t>"&lt;"</rr-t>
-              <a href="#rr-TAG">TAG</a>
-              <rr-o data-min="0" data-max="inf" class="opt">
-                <rr-a>
-                  <a href="#rr-comment_or_space" data-max="inf">comment_or_space</a>
-                  <a href="#rr-ATTRIBUTE_NAME">ATTRIBUTE_NAME</a>
-                  <rr-t>"="</rr-t>
-                  <a href="#rr-ATTRIBUTE_VALUE">ATTRIBUTE_VALUE</a>
-                </rr-a>
-              </rr-o>
-            </rr-a>
-          </rr-o>
+          <rr-a>
+            <rr-t>"&lt;"</rr-t>
+            <a href="#rr-TAG">TAG</a>
+            <rr-o data-min="0" data-max="inf" class="opt">
+              <rr-a>
+                <a href="#rr-comment_or_space" data-max="inf">comment_or_space</a>
+                <a href="#rr-ATTRIBUTE_NAME">ATTRIBUTE_NAME</a>
+                <rr-o data-min="0" class="opt">
+                  <rr-a>
+                    <rr-t>"="</rr-t>
+                    <a href="#rr-ATTRIBUTE_VALUE">ATTRIBUTE_VALUE</a>
+                  </rr-a>
+                </rr-o>
+              </rr-a>
+            </rr-o>
+            <a href="#rr-comment_or_space" data-min="0" data-max="inf" class="opt">comment_or_space</a>
+          </rr-a>
         </rr-rr>
       </rr-r>
-      <rr-r id="rr-rrlement_start">
+      <rr-r id="rr-element_start">
         <rr-n>element_start</rr-n>
         <rr-rr>
-          <rr-o>
-            <rr-a>
-              <a href="#rr-rrlement_start_1">element_start_1</a>
-              <a href="#rr-comment_or_space" data-min="0" data-max="inf" class="opt">comment_or_space</a>
-              <rr-t>"&gt;"</rr-t>
-            </rr-a>
-          </rr-o>
+          <rr-a>
+            <a href="#rr-element_start_1">element_start_1</a>
+            <rr-t>"&gt;"</rr-t>
+          </rr-a>
         </rr-rr>
       </rr-r>
-      <rr-r id="rr-rrlement_selfclosing">
+      <rr-r id="rr-element_selfclosing">
         <rr-n>element_selfclosing</rr-n>
         <rr-rr>
-          <rr-o>
-            <rr-a>
-              <a href="#rr-rrlement_start_1">element_start_1</a>
-              <a href="#rr-comment_or_space" data-min="0" data-max="inf" class="opt">comment_or_space</a>
-              <a href="#rr-SELFCLOSING">SELFCLOSING</a>
-              <rr-t>"&gt;"</rr-t>
-            </rr-a>
-          </rr-o>
+          <rr-a>
+            <a href="#rr-element_start_1">element_start_1</a>
+            <a href="#rr-SELFCLOSING">SELFCLOSING</a>
+            <rr-t>"&gt;"</rr-t>
+          </rr-a>
         </rr-rr>
       </rr-r>
-      <rr-r id="rr-rrlement">
+      <rr-r id="rr-element">
         <rr-n>element</rr-n>
         <rr-rr>
           <rr-o>
             <rr-a>
-              <a href="#rr-rrlement_start">element_start</a>
-              <a href="#rr-space" data-min="0" data-max="inf" class="opt">space</a>
+              <a href="#rr-element_start">element_start</a>
               <a href="#rr-document_fragment">document_fragment</a>
-              <a href="#rr-space" data-min="0" data-max="inf" class="opt">space</a>
-              <a href="#rr-rrlement_end">element_end</a>
+              <a href="#rr-element_end">element_end</a>
             </rr-a>
-            <a href="#rr-rrlement_selfclosing">element_selfclosing</a>
+            <a href="#rr-element_selfclosing">element_selfclosing</a>
           </rr-o>
         </rr-rr>
       </rr-r>
-      <rr-r id="rr-rrlement_end">
+      <rr-r id="rr-element_end">
         <rr-n>element_end</rr-n>
         <rr-rr>
-          <rr-o>
-            <rr-a>
-              <rr-t>"&lt;/"</rr-t>
-              <a href="#rr-END_TAG">END_TAG</a>
-              <rr-t>"&gt;"</rr-t>
-            </rr-a>
-          </rr-o>
+          <rr-a>
+            <rr-t>"&lt;/"</rr-t>
+            <a href="#rr-END_TAG">END_TAG</a>
+            <rr-t>"&gt;"</rr-t>
+          </rr-a>
         </rr-rr>
       </rr-r>
       <rr-r id="rr-TAG">
         <rr-n>TAG</rr-n>
         <rr-rr>
-          <rr-o>
-            <rr-o data-min="0" data-max="inf" class="opt">
-              <a href="#rr-idchar">idchar</a>
-              <rr-t>"="</rr-t>
-            </rr-o>
+          <rr-o data-min="0" data-max="inf" class="opt">
+            <a href="#rr-idchar">idchar</a>
+            <rr-t>"="</rr-t>
           </rr-o>
         </rr-rr>
       </rr-r>
       <rr-r id="rr-END_TAG">
         <rr-n>END_TAG</rr-n>
         <rr-rr>
-          <rr-o>
-            <rr-o data-min="0" data-max="inf" class="opt">
-              <a href="#rr-idchar">idchar</a>
-              <rr-t>"="</rr-t>
-            </rr-o>
+          <rr-o data-min="0" data-max="inf" class="opt">
+            <a href="#rr-idchar">idchar</a>
+            <rr-t>"="</rr-t>
           </rr-o>
         </rr-rr>
       </rr-r>
@@ -147,7 +134,7 @@
         <rr-n>ATTRIBUTE_NAME</rr-n>
         <rr-rr>
           <rr-o>
-            <a href="#rr-idchar" data-min="0" data-max="inf" class="opt">idchar</a>
+            <a href="#rr-idchar" data-max="inf">idchar</a>
           </rr-o>
         </rr-rr>
       </rr-r>
@@ -171,14 +158,8 @@
         <rr-n>COMMENT</rr-n>
         <rr-rr>
           <rr-o>
-            <rr-a>
-              <rr-t>"/*"</rr-t>
-              <rr-o data-min="0" data-max="inf" class="opt">
-                <rr-c>&gt;*\\&lt;</rr-c>
-                <a href="#rr-rrscape">escape</a>
-              </rr-o>
-              <rr-t>"*/"</rr-t>
-            </rr-a>
+            <a href="#rr-comment_line">comment_line</a>
+            <a href="#rr-multiline_comment">multiline_comment</a>
           </rr-o>
         </rr-rr>
       </rr-r>
@@ -215,21 +196,28 @@
           </rr-o>
         </rr-rr>
       </rr-r>
-      <rr-r id="rr-rrscape">
+      <rr-r id="rr-escape">
         <rr-n>escape</rr-n>
         <rr-rr>
+          <rr-a>
+            <rr-t>"\\"</rr-t>
+            <rr-o>
+              <rr-a>
+                <rr-t>"x"</rr-t>
+                <a href="#rr-hexdigit">hexdigit</a>
+                <a href="#rr-hexdigit">hexdigit</a>
+              </rr-a>
+              <rr-c>&lt; */=&gt;\\`-begntv&gt;</rr-c>
+            </rr-o>
+          </rr-a>
+        </rr-rr>
+      </rr-r>
+      <rr-r id="rr-idchar">
+        <rr-n>idchar</rr-n>
+        <rr-rr>
           <rr-o>
-            <rr-a>
-              <rr-t>"\\"</rr-t>
-              <rr-o>
-                <rr-a>
-                  <rr-t>"x"</rr-t>
-                  <a href="#rr-hexdigit">hexdigit</a>
-                  <a href="#rr-hexdigit">hexdigit</a>
-                </rr-a>
-                <rr-c>&lt; /=&gt;\\`-begntv&gt;</rr-c>
-              </rr-o>
-            </rr-a>
+            <rr-c>&gt; /=&gt;&lt;</rr-c>
+            <a href="#rr-escape">escape</a>
           </rr-o>
         </rr-rr>
       </rr-r>
@@ -246,82 +234,92 @@
       <rr-r id="rr-plain_string">
         <rr-n>plain_string</rr-n>
         <rr-rr>
-          <rr-o>
-            <rr-a>
-              <rr-t>"`"</rr-t>
-              <rr-o data-min="0" data-max="inf" class="opt">
-                <rr-c>&gt;\\`&lt;</rr-c>
-                <a href="#rr-rrscape">escape</a>
-              </rr-o>
-              <rr-t>"`"</rr-t>
-            </rr-a>
-          </rr-o>
+          <rr-a>
+            <rr-t>"`"</rr-t>
+            <rr-o data-min="0" data-max="inf" class="opt">
+              <rr-c>&gt;\\`&lt;</rr-c>
+              <a href="#rr-escape">escape</a>
+            </rr-o>
+            <rr-t>"`"</rr-t>
+          </rr-a>
         </rr-rr>
       </rr-r>
       <rr-r id="rr-hex_string">
         <rr-n>hex_string</rr-n>
         <rr-rr>
-          <rr-o>
-            <rr-a>
-              <rr-t>"H`"</rr-t>
-              <rr-o data-min="0" data-max="inf" class="opt">
-                <rr-a>
-                  <a href="#rr-space" data-min="0" data-max="inf" class="opt">space</a>
-                  <a href="#rr-hexdigit">hexdigit</a>
-                  <a href="#rr-space" data-min="0" data-max="inf" class="opt">space</a>
-                  <a href="#rr-hexdigit">hexdigit</a>
-                </rr-a>
-              </rr-o>
-              <a href="#rr-space" data-min="0" data-max="inf" class="opt">space</a>
-              <rr-t>"`"</rr-t>
-            </rr-a>
-          </rr-o>
+          <rr-a>
+            <rr-t>"H`"</rr-t>
+            <rr-o data-min="0" data-max="inf" class="opt">
+              <rr-a>
+                <a href="#rr-space" data-min="0" data-max="inf" class="opt">space</a>
+                <a href="#rr-hexdigit">hexdigit</a>
+                <a href="#rr-space" data-min="0" data-max="inf" class="opt">space</a>
+                <a href="#rr-hexdigit">hexdigit</a>
+              </rr-a>
+            </rr-o>
+            <a href="#rr-space" data-min="0" data-max="inf" class="opt">space</a>
+            <rr-t>"`"</rr-t>
+          </rr-a>
         </rr-rr>
       </rr-r>
       <rr-r id="rr-base64_string">
         <rr-n>base64_string</rr-n>
         <rr-rr>
-          <rr-o>
-            <rr-a>
-              <rr-t>"B`"</rr-t>
-              <rr-o data-min="0" class="opt">
-                <rr-o data-min="4" data-max="4">
+          <rr-a>
+            <rr-t>"B`"</rr-t>
+            <rr-o data-min="0" class="opt">
+              <rr-o data-min="4" data-max="4">
+                <rr-a>
+                  <a href="#rr-space" data-min="0" data-max="inf" class="opt">space</a>
+                  <a href="#rr-base64digit">base64digit</a>
+                </rr-a>
+              </rr-o>
+            </rr-o>
+            <rr-o data-min="0" class="opt">
+              <rr-a>
+                <rr-o data-min="2" data-max="2">
                   <rr-a>
                     <a href="#rr-space" data-min="0" data-max="inf" class="opt">space</a>
                     <a href="#rr-base64digit">base64digit</a>
                   </rr-a>
                 </rr-o>
-              </rr-o>
-              <rr-o data-min="0" class="opt">
-                <rr-a>
-                  <rr-o data-min="2" data-max="2">
-                    <rr-a>
-                      <a href="#rr-space" data-min="0" data-max="inf" class="opt">space</a>
-                      <a href="#rr-base64digit">base64digit</a>
-                    </rr-a>
-                  </rr-o>
-                  <rr-o data-min="0" data-max="2" class="opt">
-                    <rr-a>
-                      <a href="#rr-space" data-min="0" data-max="inf" class="opt">space</a>
-                      <a href="#rr-base64digit">base64digit</a>
-                    </rr-a>
-                    <rr-t>"="</rr-t>
-                  </rr-o>
-                </rr-a>
-              </rr-o>
-              <a href="#rr-space" data-min="0" data-max="inf" class="opt">space</a>
-              <rr-t>"`"</rr-t>
-            </rr-a>
-          </rr-o>
+                <rr-o data-min="0" data-max="2" class="opt">
+                  <rr-a>
+                    <a href="#rr-space" data-min="0" data-max="inf" class="opt">space</a>
+                    <a href="#rr-base64digit">base64digit</a>
+                  </rr-a>
+                  <rr-t>"="</rr-t>
+                </rr-o>
+              </rr-a>
+            </rr-o>
+            <a href="#rr-space" data-min="0" data-max="inf" class="opt">space</a>
+            <rr-t>"`"</rr-t>
+          </rr-a>
         </rr-rr>
       </rr-r>
-      <rr-r id="rr-idchar">
-        <rr-n>idchar</rr-n>
+      <rr-r id="rr-multiline_comment">
+        <rr-n>multiline_comment</rr-n>
         <rr-rr>
-          <rr-o>
-            <rr-c>&gt; /=&gt;&lt;</rr-c>
-            <a href="#rr-rrscape">escape</a>
-          </rr-o>
+          <rr-a>
+            <rr-t>"/*"</rr-t>
+            <rr-o data-min="0" data-max="inf" class="opt">
+              <rr-c>&gt;*\\&lt;</rr-c>
+              <a href="#rr-escape">escape</a>
+            </rr-o>
+            <rr-t>"*/"</rr-t>
+          </rr-a>
+        </rr-rr>
+      </rr-r>
+      <rr-r id="rr-comment_line">
+        <rr-n>comment_line</rr-n>
+        <rr-rr>
+          <rr-a>
+            <rr-t>"//"</rr-t>
+            <rr-o data-min="0" data-max="inf" class="opt">
+              <rr-c>&gt;\x0A&lt;</rr-c>
+            </rr-o>
+            <rr-t>"\n"</rr-t>
+          </rr-a>
         </rr-rr>
       </rr-r>
     </rr-root>
