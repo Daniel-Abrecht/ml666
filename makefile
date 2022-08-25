@@ -41,6 +41,7 @@ OBJECTS := $(patsubst %,build/$(TYPE)/o/%.o,$(SOURCES))
 .PHONY: all clean get-bin get-lib install uninstall shell test
 
 all: bin/$(TYPE)/ml666-tokenizer-example \
+     bin/$(TYPE)/ml666-parser-example \
      lib/$(TYPE)/libml666.a \
      lib/$(TYPE)/libml666.so \
      test

@@ -1,5 +1,5 @@
 #define _DEFAULT_SOURCE
-#include <ml666/ml666.h>
+#include <ml666/tokenizer.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

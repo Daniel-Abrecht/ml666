@@ -7,7 +7,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
-#include <ml666/ml666.h>
+#include <ml666/tokenizer.h>
 
 #define ML666__STATE \
   X(ML666__STATE_EOF) \
