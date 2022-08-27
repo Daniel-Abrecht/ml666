@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <ml666/common.h>
 
 #define ML666__TOKENS \
   X(ML666_NONE) \
@@ -22,11 +23,6 @@ enum ml666_token {
   ML666_TOKEN_COUNT
 };
 extern const char*const ml666__token_name[ML666_TOKEN_COUNT];
-
-struct ml666_buffer_ro {
-  const char* data;
-  size_t length;
-};
 
 struct ml666_tokenizer {
   enum ml666_token token;
