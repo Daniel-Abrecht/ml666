@@ -13,7 +13,7 @@ ML666_DEFAULT_OPAQUE_ATTRIBUTE_NAME
 struct ml666__parser_private {
   struct ml666_parser public;
   struct ml666_tokenizer* tokenizer;
-  bool empty_token;
+  bool nonempty_token;
 
   // Opaque pointers. The callback handlers may store a pointer to anything in them.
   struct {
@@ -219,7 +219,7 @@ bool ml666_parser_next(struct ml666_parser* _parser){
   bool done = !ml666_tokenizer_next(tokenizer);
   parser->public.error = tokenizer->error;
   if(tokenizer->match.length)
-    parser->empty_token = false;
+    parser->nonempty_token = true;
   switch(tokenizer->token){
     case ML666_NONE: break;
     case ML666_EOF: break;
@@ -251,7 +251,7 @@ bool ml666_parser_next(struct ml666_parser* _parser){
         break;
       }
       if(tokenizer->complete){
-        if(!parser->empty_token){
+        if(parser->nonempty_token){
           if(!ml666_parser_a_end_tag_check(parser, parser->state.tag_name)){
             if(!parser->public.error)
               parser->public.error = "ml666_parser::end_tag_check failed, did the opening / closing tags missmatch?";
@@ -316,7 +316,7 @@ bool ml666_parser_next(struct ml666_parser* _parser){
     case ML666_TOKEN_COUNT: abort();
   }
   if(tokenizer->complete)
-    parser->empty_token = true;
+    parser->nonempty_token = false;
   if(done){
     if(parser->state.tag_name)
       ml666_parser_a_tag_name_free(parser, parser->state.tag_name);

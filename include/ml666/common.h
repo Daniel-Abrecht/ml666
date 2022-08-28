@@ -1,6 +1,8 @@
 #ifndef ML666_COMMON_H
 #define ML666_COMMON_H
 
+#include <stddef.h>
+
 // This must match struct ml666_buffer
 struct ml666_buffer_ro {
   size_t length;
