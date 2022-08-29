@@ -57,11 +57,17 @@ struct ml666_simple_tree_builder {
   struct ml666_st_node* cur;
 };
 
-void ml666_st_node_put(struct ml666_st_node* node);
-bool ml666_st_node_ref(struct ml666_st_node* node);
-bool ml666_st_node_ref_set(struct ml666_st_node** dest, struct ml666_st_node* src);
-struct ml666_st_children* ml666_st_node_get_children(struct ml666_st_node* node);
-bool ml666_st_set(struct ml666_st_node* parent, struct ml666_st_member* member, struct ml666_st_member* before);
-struct ml666_st_element* ml666_st_element_create(const struct ml666_hashed_buffer* entry, bool copy_name);
+struct ml666_st_api {
+  void (*node_put)(struct ml666_st_node* node);
+  bool (*node_ref)(struct ml666_st_node* node);
+  bool (*node_ref_set)(struct ml666_st_node** dest, struct ml666_st_node* src);
+  struct ml666_st_children* (*node_get_children)(struct ml666_st_node* node);
+  bool (*set)(struct ml666_st_node* parent, struct ml666_st_member* member, struct ml666_st_member* before);
+  struct ml666_st_element* (*element_create)(const struct ml666_hashed_buffer* entry, bool copy_name);
+  struct ml666_st_document* (*document_create)(void);
+  void (*subtree_disintegrate)(struct ml666_st_children* children);
+};
+
+extern struct ml666_st_api ml666_st_default_api;
 
 #endif

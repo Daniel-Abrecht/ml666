@@ -17,20 +17,20 @@ static bool tag_push(struct ml666_parser* parser, ml666_opaque_tag_name* name){
   struct ml666_hashed_buffer entry;
   ml666_hashed_buffer__set(&entry, (*name)->buffer.ro);
   bool copy_name = true; // Note: "false" only works if the allocator actually used malloc. Any other case will fail. "true" always works, but is more expencive.
-  struct ml666_st_element* element = ml666_st_element_create(&entry, copy_name);
+  struct ml666_st_element* element = ml666_st_default_api.element_create(&entry, copy_name);
   if(!copy_name)
     *name = 0;
   if(!element){
     parser->error = "ml666_parser::tag_push: ml666_st_element_create\n";
     return false;
   }
-  if(!ml666_st_set(stb->cur, &element->member, 0)){
+  if(!ml666_st_default_api.set(stb->cur, &element->member, 0)){
     parser->error = "ml666_parser::tag_push: ml666_st_set failed";
-    ml666_st_node_put(&element->member.node);
+    ml666_st_default_api.node_put(&element->member.node);
     return false;
   }
-  ml666_st_node_put(&element->member.node);
-  return ml666_st_node_ref_set(&stb->cur, &element->member.node);
+  ml666_st_default_api.node_put(&element->member.node);
+  return ml666_st_default_api.node_ref_set(&stb->cur, &element->member.node);
 }
 
 static bool end_tag_check(struct ml666_parser* parser, ml666_opaque_tag_name name){
@@ -51,7 +51,7 @@ static bool tag_pop(struct ml666_parser* parser){
   struct ml666_st_element* element = (struct ml666_st_element*)stb->cur;
   if(!element->member.parent)
     return false;
-  return ml666_st_node_ref_set(&stb->cur, element->member.parent);
+  return ml666_st_default_api.node_ref_set(&stb->cur, element->member.parent);
 }
 
 static bool init(struct ml666_parser* parser){
@@ -60,16 +60,14 @@ static bool init(struct ml666_parser* parser){
     parser->error = "calloc failed";
     return false;
   }
-  struct ml666_st_document* document = calloc(1, sizeof(*document));
+  struct ml666_st_document* document = ml666_st_default_api.document_create();
   if(!document){
     free(stb);
-    parser->error = "calloc failed";
+    parser->error = "ml666_st_document_create failed";
     return false;
   }
-  document->node.type = ML666_STB_NT_DOCUMENT;
-  document->node.refcount = 1;
   stb->document = document;
-  ml666_st_node_ref_set(&stb->cur, &document->node);
+  ml666_st_default_api.node_ref_set(&stb->cur, &document->node);
   parser->user_ptr = stb;
   return true;
 }
@@ -86,20 +84,6 @@ static const struct ml666_parser_cb callbacks = {
   .tag_pop = tag_pop,
 };
 
-/*static bool ml666_stb_create(int fd){
-}*/
-
-void ml666_st_subtree_disintegrate(struct ml666_st_children* children){
-  while(children->first){
-    struct ml666_st_children* chch = ml666_st_node_get_children(&children->first->node);
-    ml666_st_subtree_disintegrate(chch);
-    // It's important for this to be depth first.
-    // When the parent looses it's parent and children, it may get freed, as noone may be holding a reference anymore.
-    // But by removing the parent here, our unknown parent still has a reference
-    ml666_st_set(0, children->first, 0);
-  }
-}
-
 int main(){
   setvbuf(stdout, NULL, _IOLBF, 0);
   struct ml666_parser* parser = ml666_parser_create( .fd = 0, .cb = &callbacks );
@@ -113,9 +97,9 @@ int main(){
     return 1;
   }
   struct ml666_simple_tree_builder* stb = parser->user_ptr;
-  ml666_st_node_ref_set(&stb->cur, 0);
-  ml666_st_subtree_disintegrate(&stb->document->children);
-  ml666_st_node_put(&stb->document->node);
+  ml666_st_default_api.node_ref_set(&stb->cur, 0);
+  ml666_st_default_api.subtree_disintegrate(&stb->document->children);
+  ml666_st_default_api.node_put(&stb->document->node);
   ml666_parser_destroy(parser);
   free(stb);
   return 0;
