@@ -15,7 +15,7 @@ static bool tag_push(struct ml666_parser* parser, ml666_opaque_tag_name* name){
     return false;
   }
   struct ml666_hashed_buffer entry;
-  ml666_hashed_buffer_set(&entry, (*name)->buffer.ro);
+  ml666_hashed_buffer__set(&entry, (*name)->buffer.ro);
   bool copy_name = true; // Note: "false" only works if the allocator actually used malloc. Any other case will fail. "true" always works, but is more expencive.
   struct ml666_st_element* element = ml666_st_element_create(&entry, copy_name);
   if(!copy_name)
@@ -37,9 +37,9 @@ static bool end_tag_check(struct ml666_parser* parser, ml666_opaque_tag_name nam
   struct ml666_simple_tree_builder* stb = parser->user_ptr;
   if(!stb->cur || stb->cur->type != ML666_STB_NT_ELEMENT)
     return false;
-  const struct ml666_hashed_buffer_set_entry* cur_name = ((struct ml666_st_element*)stb->cur)->name;
-  if( cur_name->data.buffer.length == name->buffer.length
-   && memcmp(name->buffer.data, cur_name->data.buffer.data, name->buffer.length) == 0
+  const struct ml666_hashed_buffer* cur_name = ml666_hashed_buffer_set__peek(((struct ml666_st_element*)stb->cur)->name);
+  if( cur_name->buffer.length == name->buffer.length
+   && memcmp(name->buffer.data, cur_name->buffer.data, name->buffer.length) == 0
   ) return true;
   return false;
 }

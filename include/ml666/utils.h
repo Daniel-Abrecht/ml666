@@ -24,25 +24,23 @@ struct ml666_hashed_buffer {
   uint64_t hash;
 };
 
-static inline void ml666_hashed_buffer_set(struct ml666_hashed_buffer* hashed, struct ml666_buffer_ro content){
+static inline void ml666_hashed_buffer__set(struct ml666_hashed_buffer* hashed, struct ml666_buffer_ro content){
   hashed->buffer = content;
   hashed->hash   = ml666_hash_FNV_1a(content);
 }
 
-struct ml666_hashed_buffer_set_entry {
-  struct ml666_hashed_buffer data;
-  size_t refcount;
-  struct ml666_hashed_buffer_set_entry* next;
+// The first entry must be a struct ml666_hashed_buffer instance.
+struct ml666_hashed_buffer_set_entry;
+
+static inline const struct ml666_hashed_buffer* ml666_hashed_buffer_set__peek(const struct ml666_hashed_buffer_set_entry* entry){
+  return (const struct ml666_hashed_buffer*)entry;
+}
+
+struct ml666_hashed_buffer_set_api {
+  const struct ml666_hashed_buffer_set_entry* (*add)(const struct ml666_hashed_buffer* entry, bool copy_content);
+  void (*put)(const struct ml666_hashed_buffer_set_entry*);
 };
 
-struct ml666_hashed_buffer_set;
-
-void ml666_hashed_buffer_set__put(const struct ml666_hashed_buffer_set_entry*);
-
-bool ml666_hashed_buffer_set__add(
-  const struct ml666_hashed_buffer_set_entry** out,
-  const struct ml666_hashed_buffer* entry,
-  bool copy_content
-);
+extern const struct ml666_hashed_buffer_set_api ml666_hashed_buffer_set; // Default implementation
 
 #endif

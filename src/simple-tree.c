@@ -10,7 +10,7 @@ void ml666_st_node_put(struct ml666_st_node* node){
     case ML666_STB_NT_DOCUMENT: break;
     case ML666_STB_NT_ELEMENT: {
       struct ml666_st_element* element = (struct ml666_st_element*)node;
-      ml666_hashed_buffer_set__put(element->name);
+      ml666_hashed_buffer_set.put(element->name);
     } break;
     case ML666_STB_NT_CONTENT: break;
     case ML666_STB_NT_COMMENT: break;
@@ -130,9 +130,9 @@ struct ml666_st_element* ml666_st_element_create(const struct ml666_hashed_buffe
   }
   element->member.node.type = ML666_STB_NT_ELEMENT;
   element->member.node.refcount = 1;
-  if(!ml666_hashed_buffer_set__add(&element->name, entry, copy_name)){
+  if(!(element->name = ml666_hashed_buffer_set.add(entry, copy_name))){
     ml666_st_node_put(&element->member.node);
-    fprintf(stderr, "ml666_hashed_buffer_set__add failed");
+    fprintf(stderr, "ml666_hashed_buffer_set::add failed");
     return false;
   }
   return element;
