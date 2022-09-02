@@ -45,9 +45,12 @@ static bool tag_push(struct ml666_parser* parser, ml666_opaque_tag_name* name){
 
 static bool end_tag_check(struct ml666_parser* parser, ml666_opaque_tag_name name){
   struct ml666_simple_tree_parser* stp = parser->user_ptr;
-  if(!stp->cur || ml666_st_node_get_type(stp->stb, stp->cur) != ML666_ST_NT_ELEMENT)
+  if(!stp->cur)
     return false;
-  const struct ml666_hashed_buffer* cur_name = ml666_hashed_buffer_set__peek(ml666_st_element_get_name(stp->stb, (struct ml666_st_element*)stp->cur));
+  struct ml666_st_element* element = ML666_ST_U_ELEMENT(stp->cur);
+  if(!element)
+    return false;
+  const struct ml666_hashed_buffer* cur_name = ml666_hashed_buffer_set__peek(ml666_st_element_get_name(stp->stb, element));
   if( cur_name->buffer.length == name->buffer.length
    && memcmp(name->buffer.data, cur_name->buffer.data, name->buffer.length) == 0
   ) return true;
@@ -56,10 +59,12 @@ static bool end_tag_check(struct ml666_parser* parser, ml666_opaque_tag_name nam
 
 static bool tag_pop(struct ml666_parser* parser){
   struct ml666_simple_tree_parser* stp = parser->user_ptr;
-  if(!stp->cur || ml666_st_node_get_type(stp->stb, stp->cur) != ML666_ST_NT_ELEMENT)
+  if(!stp->cur)
     return false;
-  struct ml666_st_member* member = (struct ml666_st_member*)stp->cur;
-  struct ml666_st_node* parent = ml666_st_member_get_parent(stp->stb, member);
+  struct ml666_st_element* element = ML666_ST_U_ELEMENT(stp->cur);
+  if(!element)
+    return false;
+  struct ml666_st_node* parent = ml666_st_member_get_parent(stp->stb, ML666_ST_MEMBER(element));
   if(!parent)
     return false;
   return ml666_st_node_ref_set(stp->stb, &stp->cur, parent);
