@@ -108,7 +108,7 @@ struct ml666_simple_tree_parser* ml666_simple_tree_parser_create_p(struct ml666_
 void ml666_simple_tree_parser_destroy(struct ml666_simple_tree_parser* stp){
   ml666_st_node_ref_set(stp->stb, &stp->cur, 0);
   if(stp->document){
-    ml666_st_subtree_disintegrate(stp->stb, ml666_st_document_get_children(stp->stb, stp->document));
+    ml666_st_subtree_disintegrate(stp->stb, ML666_ST_CHILDREN(stp->stb, stp->document));
     ml666_st_node_put(stp->stb, ML666_ST_NODE(stp->document));
     stp->document = 0;
   }

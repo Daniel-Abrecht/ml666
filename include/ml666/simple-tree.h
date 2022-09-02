@@ -90,6 +90,20 @@ struct ml666_st_builder {
     const struct ml666_st_member*: ML666_ST_TYPE((X)) == ML666_ST_NT_COMMENT ? (const struct ml666_st_comment*)(X) : 0 \
   )
 
+#define ML666_ST_CHILDREN(STB, X) _Generic((X), \
+    struct ml666_st_document*: ml666_st_document_get_children((STB), (void*)(X)), \
+    struct ml666_st_element*: ml666_st_element_get_children((STB), (void*)(X)), \
+    const struct ml666_st_document*: (const struct ml666_st_children*)ml666_st_document_get_children((STB), (void*)(X)), \
+    const struct ml666_st_element*: (const struct ml666_st_children*)ml666_st_element_get_children((STB), (void*)(X)) \
+  )
+
+#define ML666_ST_U_CHILDREN(STB, X) _Generic((X), \
+    struct ml666_st_node*: ml666_st_node_get_children((STB), (void*)(X)), \
+    struct ml666_st_member*: ml666_st_node_get_children((STB), (void*)(X)), \
+    const struct ml666_st_node*: (const struct ml666_st_children*)ml666_st_node_get_children((STB), (void*)(X)), \
+    const struct ml666_st_member*: (const struct ml666_st_children*)ml666_st_node_get_children((STB), (void*)(X)) \
+  )
+
 
 #define ML666_ST_CB(X, ...) \
   X(node_put, void, (struct ml666_st_builder* stb, struct ml666_st_node* node), __VA_ARGS__) \
