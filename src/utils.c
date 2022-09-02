@@ -10,40 +10,41 @@ struct ml666_hashed_buffer_set_entry {
   struct ml666_hashed_buffer_set_entry* next;
 };
 
-struct ml666_hashed_buffer_set {
+struct ml666_hashed_buffer_set_default {
+  struct ml666_hashed_buffer_set super;
   size_t entry_count;
   struct ml666_hashed_buffer_set_entry* (*bucket)[512];
 };
-
-static struct ml666_hashed_buffer_set buffer_set;
 
 static unsigned hash_to_bucket(uint64_t hash){
   return ( (hash >> 0 ) ^ (hash >> 16) ^ (hash >> 32) ^ (hash >> 48) ) & 0x1FF;
 }
 
-static void put(const struct ml666_hashed_buffer_set_entry* _entry){
+void ml666_hashed_buffer_set__d__put(struct ml666_hashed_buffer_set* _buffer_set, const struct ml666_hashed_buffer_set_entry* _entry){
+  struct ml666_hashed_buffer_set_default* buffer_set = (struct ml666_hashed_buffer_set_default*)_buffer_set;
   struct ml666_hashed_buffer_set_entry* entry = (struct ml666_hashed_buffer_set_entry*)_entry;
   if((entry->refcount -= 1))
     return;
   unsigned bucket = hash_to_bucket(entry->data.hash);
-  for(struct ml666_hashed_buffer_set_entry **it=&(*buffer_set.bucket)[bucket], *cur; (cur=*it); it=&cur->next){
+  for(struct ml666_hashed_buffer_set_entry **it=&(*buffer_set->bucket)[bucket], *cur; (cur=*it); it=&cur->next){
     if(cur != entry)
       continue;
     *it = cur->next;
     free((void*)cur->data.buffer.data);
     free(cur);
-    if(!(buffer_set.entry_count -= 1))
-      free(buffer_set.bucket);
+    if(!(buffer_set->entry_count -= 1))
+      free(buffer_set->bucket);
     return;
   }
   fprintf(stderr, "%s:%u: error: entry not found in set\n", __FILE__, __LINE__);
   abort();
 }
 
-static const struct ml666_hashed_buffer_set_entry* add(const struct ml666_hashed_buffer* entry, bool copy_content){
-  if(!buffer_set.entry_count++){
-    buffer_set.bucket = calloc(1, sizeof(*buffer_set.bucket));
-    if(!buffer_set.bucket){
+const struct ml666_hashed_buffer_set_entry* ml666_hashed_buffer_set__d__add(struct ml666_hashed_buffer_set* _buffer_set, const struct ml666_hashed_buffer* entry, bool copy_content){
+  struct ml666_hashed_buffer_set_default* buffer_set = (struct ml666_hashed_buffer_set_default*)_buffer_set;
+  if(!buffer_set->entry_count++){
+    buffer_set->bucket = calloc(1, sizeof(*buffer_set->bucket));
+    if(!buffer_set->bucket){
       perror("calloc failed");
       return false;
     }
@@ -53,7 +54,7 @@ static const struct ml666_hashed_buffer_set_entry* add(const struct ml666_hashed
   unsigned bucket = hash_to_bucket(c.hash);
 
   struct ml666_hashed_buffer_set_entry **it, *cur;
-  for(it=&(*buffer_set.bucket)[bucket]; (cur=*it); it=&cur->next){
+  for(it=&(*buffer_set->bucket)[bucket]; (cur=*it); it=&cur->next){
     struct ml666_hashed_buffer_set_entry* cur = *it;
     if(cur->data.hash > c.hash)
       break;
@@ -95,7 +96,14 @@ found:;
   return cur;
 }
 
-const struct ml666_hashed_buffer_set_api ml666_hashed_buffer_set = {
-  .add = add,
-  .put = put,
+const struct ml666_hashed_buffer_set_cb ml666_default_hashed_buffer_cb = {
+  .add = ml666_hashed_buffer_set__d__add,
+  .put = ml666_hashed_buffer_set__d__put,
 };
+
+struct ml666_hashed_buffer_set* ml666_get_default_hashed_buffer_set(void){
+  static struct ml666_hashed_buffer_set_default buffer_set = {
+    .super.cb = &ml666_default_hashed_buffer_cb,
+  };
+  return &buffer_set.super;
+}

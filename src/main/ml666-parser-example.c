@@ -4,7 +4,12 @@
 #include <stdio.h>
 
 int main(){
-  struct ml666_simple_tree_parser* stp = ml666_simple_tree_parser_create( .fd = 0, .stb = &ml666_default_simple_tree_builder );
+  struct ml666_st_builder* stb = ml666_st_builder_create(0);
+  if(!stb){
+    fprintf(stderr, "ml666_st_builder_create failed");
+    return 1;
+  }
+  struct ml666_simple_tree_parser* stp = ml666_simple_tree_parser_create( .fd = 0, .stb = stb );
   if(!stp){
     fprintf(stderr, "ml666_parser_create failed");
     return 1;
@@ -16,5 +21,6 @@ int main(){
     return 1;
   }
   ml666_simple_tree_parser_destroy(stp);
+  ml666_st_builder_destroy(stb);
   return 0;
 }

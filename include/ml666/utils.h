@@ -29,6 +29,9 @@ static inline void ml666_hashed_buffer__set(struct ml666_hashed_buffer* hashed, 
   hashed->hash   = ml666_hash_FNV_1a(content);
 }
 
+
+//// hashed_buffer_set api
+
 // The first entry must be a struct ml666_hashed_buffer instance.
 struct ml666_hashed_buffer_set_entry;
 
@@ -36,11 +39,51 @@ static inline const struct ml666_hashed_buffer* ml666_hashed_buffer_set__peek(co
   return (const struct ml666_hashed_buffer*)entry;
 }
 
-struct ml666_hashed_buffer_set_api {
-  const struct ml666_hashed_buffer_set_entry* (*add)(const struct ml666_hashed_buffer* entry, bool copy_content);
-  void (*put)(const struct ml666_hashed_buffer_set_entry*);
+struct ml666_hashed_buffer_set;
+
+typedef const struct ml666_hashed_buffer_set_entry* ml666_hashed_buffer_set__cb__add(
+  struct ml666_hashed_buffer_set* buffer_set,
+  const struct ml666_hashed_buffer* entry,
+  bool copy_content
+);
+typedef void ml666_hashed_buffer_set__cb__put(
+  struct ml666_hashed_buffer_set* buffer_set,
+  const struct ml666_hashed_buffer_set_entry*
+);
+
+struct ml666_hashed_buffer_set_cb {
+  ml666_hashed_buffer_set__cb__add* add;
+  ml666_hashed_buffer_set__cb__put* put;
 };
 
-extern const struct ml666_hashed_buffer_set_api ml666_hashed_buffer_set; // Default implementation
+struct ml666_hashed_buffer_set {
+  const struct ml666_hashed_buffer_set_cb*const cb;
+};
+
+static inline const struct ml666_hashed_buffer_set_entry* ml666_hashed_buffer_set__add(
+  struct ml666_hashed_buffer_set* buffer_set,
+  const struct ml666_hashed_buffer* buffer,
+  bool copy_content
+){
+  return buffer_set->cb->add(buffer_set, buffer, copy_content);
+}
+
+static inline void ml666_hashed_buffer_set__put(
+  struct ml666_hashed_buffer_set* buffer_set,
+  const struct ml666_hashed_buffer_set_entry* entry
+){
+  buffer_set->cb->put(buffer_set, entry);
+}
+
+
+// Default implementation
+ml666_hashed_buffer_set__cb__add ml666_hashed_buffer_set__d__add;
+ml666_hashed_buffer_set__cb__put ml666_hashed_buffer_set__d__put;
+
+extern const struct ml666_hashed_buffer_set_cb ml666_default_hashed_buffer_cb;
+
+struct ml666_hashed_buffer_set* ml666_get_default_hashed_buffer_set(void);
+
+////
 
 #endif

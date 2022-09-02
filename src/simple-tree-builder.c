@@ -1,19 +1,25 @@
 #include <ml666/simple-tree-builder.h>
+#include <ml666/utils.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 
 ML666_DEFAULT_SIMPLE_TREE
 
-void ml666_st__d__node_put(struct ml666_st_builder* stb, struct ml666_st_node* node){
-  (void)stb;
+struct ml666_st_builder_default {
+  struct ml666_st_builder super;
+  struct ml666_hashed_buffer_set* buffer_set;
+};
+
+void ml666_st__d__node_put(struct ml666_st_builder* _stb, struct ml666_st_node* node){
+  struct ml666_st_builder_default* stb = (struct ml666_st_builder_default*)_stb;
   if((node->refcount -= 1))
     return;
   switch(node->type){
     case ML666_ST_NT_DOCUMENT: break;
     case ML666_ST_NT_ELEMENT: {
       struct ml666_st_element* element = (struct ml666_st_element*)node;
-      ml666_hashed_buffer_set.put(element->name);
+      ml666_hashed_buffer_set__put(stb->buffer_set, element->name);
     } break;
     case ML666_ST_NT_CONTENT: break;
     case ML666_ST_NT_COMMENT: break;
@@ -178,8 +184,8 @@ struct ml666_st_document* ml666_st__d__document_create(struct ml666_st_builder* 
   return document;
 }
 
-struct ml666_st_element* ml666_st__d__element_create(struct ml666_st_builder* stb, const struct ml666_hashed_buffer* entry, bool copy_name){
-  (void)stb;
+struct ml666_st_element* ml666_st__d__element_create(struct ml666_st_builder* _stb, const struct ml666_hashed_buffer* entry, bool copy_name){
+  struct ml666_st_builder_default* stb = (struct ml666_st_builder_default*)_stb;
   struct ml666_st_element* element = calloc(1, sizeof(struct ml666_st_element));
   if(!element){
     perror("calloc failed");
@@ -187,8 +193,8 @@ struct ml666_st_element* ml666_st__d__element_create(struct ml666_st_builder* st
   }
   element->member.node.type = ML666_ST_NT_ELEMENT;
   element->member.node.refcount = 1;
-  if(!(element->name = ml666_hashed_buffer_set.add(entry, copy_name))){
-    ml666_st__d__node_put(stb, &element->member.node);
+  if(!(element->name = ml666_hashed_buffer_set__add(stb->buffer_set, entry, copy_name))){
+    ml666_st__d__node_put(&stb->super, &element->member.node);
     fprintf(stderr, "ml666_hashed_buffer_set::add failed");
     return 0;
   }
@@ -227,6 +233,15 @@ struct ml666_st_member* ml666_st__d__get_last_child(struct ml666_st_builder* stb
 
 ML666_ST_IMPLEMENTATION(ml666_default, ml666_st__d_)
 
-struct ml666_st_builder ml666_default_simple_tree_builder = {
-  .cb = &ml666_default_st_api,
-};
+struct ml666_st_builder* ml666_st_builder_create_p(struct ml666_st_builder_create_args args){
+  struct ml666_st_builder_default* stb = calloc(1, sizeof(*stb));
+  *(const struct ml666_st_cb**)&stb->super.cb = &ml666_default_st_api;
+  stb->buffer_set = args.buffer_set;
+  if(!stb->buffer_set)
+    stb->buffer_set = ml666_get_default_hashed_buffer_set();
+  return &stb->super;
+}
+
+void ml666_st_builder_destroy(struct ml666_st_builder* stb){
+  free(stb);
+}

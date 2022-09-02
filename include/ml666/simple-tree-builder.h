@@ -6,7 +6,13 @@
 // Default API
 ML666_ST_DECLARATION(ml666_default, ml666_st__d_)
 
-extern struct ml666_st_builder ml666_default_simple_tree_builder;
+struct ml666_st_builder_create_args {
+  struct ml666_hashed_buffer_set* buffer_set;
+};
+
+struct ml666_st_builder* ml666_st_builder_create_p(struct ml666_st_builder_create_args args);
+#define ml666_st_builder_create(...) ml666_st_builder_create_p((struct ml666_st_builder_create_args){__VA_ARGS__})
+void ml666_st_builder_destroy(struct ml666_st_builder*);
 
 // This macro can be used for directly accessing the default simple tree data structures
 // It is recommended to use the API functions in simple-tree.h instead, because
