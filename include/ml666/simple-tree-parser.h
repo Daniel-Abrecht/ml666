@@ -1,12 +1,12 @@
-#ifndef ML666_SIMPLE_TREE_BUILDER_H
-#define ML666_SIMPLE_TREE_BUILDER_H
+#ifndef ML666_SIMPLE_TREE_PARSER_H
+#define ML666_SIMPLE_TREE_PARSER_H
 
 #include <stdbool.h>
 
 struct ml666_simple_tree_parser;
 
 struct ml666_simple_tree_parser_create_args {
-  const struct ml666_st_cb* cb;
+  struct ml666_st_builder* stb;
   int fd;
 };
 

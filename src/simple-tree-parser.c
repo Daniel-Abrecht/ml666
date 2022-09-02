@@ -1,3 +1,4 @@
+#include <ml666/simple-tree-builder.h>
 #include <ml666/simple-tree-parser.h>
 #include <ml666/simple-tree.h>
 #include <ml666/parser.h>
@@ -10,7 +11,7 @@ ML666_DEFAULT_OPAQUE_TAG_NAME
 ML666_DEFAULT_OPAQUE_ATTRIBUTE_NAME
 
 struct ml666_simple_tree_parser {
-  const struct ml666_st_cb* cb;
+  struct ml666_st_builder* stb;
   struct ml666_parser* parser;
   struct ml666_st_document* document;
   struct ml666_st_node* cur;
@@ -26,27 +27,27 @@ static bool tag_push(struct ml666_parser* parser, ml666_opaque_tag_name* name){
   struct ml666_hashed_buffer entry;
   ml666_hashed_buffer__set(&entry, (*name)->buffer.ro);
   bool copy_name = true; // Note: "false" only works if the allocator actually used malloc. Any other case will fail. "true" always works, but is more expencive.
-  struct ml666_st_element* element = stp->cb->element_create(&entry, copy_name);
+  struct ml666_st_element* element = ml666_st_element_create(stp->stb, &entry, copy_name);
   if(!copy_name)
     *name = 0;
   if(!element){
     parser->error = "ml666_parser::tag_push: ml666_st_element_create\n";
     return false;
   }
-  if(!stp->cb->member_set(stp->cur, ML666_ST_MEMBER(element), 0)){
+  if(!ml666_st_member_set(stp->stb, stp->cur, ML666_ST_MEMBER(element), 0)){
     parser->error = "ml666_parser::tag_push: ml666_st_set failed";
-    stp->cb->node_put(ML666_ST_NODE(element));
+    ml666_st_node_put(stp->stb, ML666_ST_NODE(element));
     return false;
   }
-  stp->cb->node_put(ML666_ST_NODE(element));
-  return stp->cb->node_ref_set(&stp->cur, ML666_ST_NODE(element));
+  ml666_st_node_put(stp->stb, ML666_ST_NODE(element));
+  return ml666_st_node_ref_set(stp->stb, &stp->cur, ML666_ST_NODE(element));
 }
 
 static bool end_tag_check(struct ml666_parser* parser, ml666_opaque_tag_name name){
   struct ml666_simple_tree_parser* stp = parser->user_ptr;
-  if(!stp->cur || stp->cb->node_get_type(stp->cur) != ML666_ST_NT_ELEMENT)
+  if(!stp->cur || ml666_st_node_get_type(stp->stb, stp->cur) != ML666_ST_NT_ELEMENT)
     return false;
-  const struct ml666_hashed_buffer* cur_name = ml666_hashed_buffer_set__peek(stp->cb->element_get_name((struct ml666_st_element*)stp->cur));
+  const struct ml666_hashed_buffer* cur_name = ml666_hashed_buffer_set__peek(ml666_st_element_get_name(stp->stb, (struct ml666_st_element*)stp->cur));
   if( cur_name->buffer.length == name->buffer.length
    && memcmp(name->buffer.data, cur_name->buffer.data, name->buffer.length) == 0
   ) return true;
@@ -55,13 +56,13 @@ static bool end_tag_check(struct ml666_parser* parser, ml666_opaque_tag_name nam
 
 static bool tag_pop(struct ml666_parser* parser){
   struct ml666_simple_tree_parser* stp = parser->user_ptr;
-  if(!stp->cur || stp->cb->node_get_type(stp->cur) != ML666_ST_NT_ELEMENT)
+  if(!stp->cur || ml666_st_node_get_type(stp->stb, stp->cur) != ML666_ST_NT_ELEMENT)
     return false;
   struct ml666_st_member* member = (struct ml666_st_member*)stp->cur;
-  struct ml666_st_node* parent = stp->cb->member_get_parent(member);
+  struct ml666_st_node* parent = ml666_st_member_get_parent(stp->stb, member);
   if(!parent)
     return false;
-  return stp->cb->node_ref_set(&stp->cur, parent);
+  return ml666_st_node_ref_set(stp->stb, &stp->cur, parent);
 }
 
 static const struct ml666_parser_cb callbacks = {
@@ -81,29 +82,29 @@ struct ml666_simple_tree_parser* ml666_simple_tree_parser_create_p(struct ml666_
     stp->parser->error = "calloc failed";
     return false;
   }
-  stp->cb = args.cb;
+  stp->stb = args.stb;
   stp->parser = ml666_parser_create( .fd = 0, .cb = &callbacks );
   if(!stp->parser){
     fprintf(stderr, "ml666_parser_create failed");
     return false;
   }
   stp->parser->user_ptr = stp;
-  struct ml666_st_document* document = stp->cb->document_create();
+  struct ml666_st_document* document = ml666_st_document_create(stp->stb);
   if(!document){
     free(stp);
     fprintf(stderr, "ml666_st_document_create failed");
     return false;
   }
   stp->document = document;
-  stp->cb->node_ref_set(&stp->cur, ML666_ST_NODE(document));
+  ml666_st_node_ref_set(stp->stb, &stp->cur, ML666_ST_NODE(document));
   return stp;
 }
 
 void ml666_simple_tree_parser_destroy(struct ml666_simple_tree_parser* stp){
-  stp->cb->node_ref_set(&stp->cur, 0);
+  ml666_st_node_ref_set(stp->stb, &stp->cur, 0);
   if(stp->document){
-    stp->cb->subtree_disintegrate(stp->cb->document_get_children(stp->document));
-    stp->cb->node_put(ML666_ST_NODE(stp->document));
+    ml666_st_subtree_disintegrate(stp->stb, ml666_st_document_get_children(stp->stb, stp->document));
+    ml666_st_node_put(stp->stb, ML666_ST_NODE(stp->document));
     stp->document = 0;
   }
   if(stp->parser)

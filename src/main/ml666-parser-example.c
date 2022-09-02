@@ -1,10 +1,10 @@
 #include <ml666/simple-tree-parser.h>
+#include <ml666/simple-tree-builder.h>
 #include <ml666/simple-tree.h>
 #include <stdio.h>
 
 int main(){
-  setvbuf(stdout, NULL, _IOLBF, 0);
-  struct ml666_simple_tree_parser* stp = ml666_simple_tree_parser_create( .fd = 0, .cb = &ml666_default_st_api );
+  struct ml666_simple_tree_parser* stp = ml666_simple_tree_parser_create( .fd = 0, .stb = &ml666_default_simple_tree_builder );
   if(!stp){
     fprintf(stderr, "ml666_parser_create failed");
     return 1;

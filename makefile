@@ -43,8 +43,7 @@ OBJECTS := $(patsubst %,build/$(TYPE)/o/%.o,$(SOURCES))
 all: bin/$(TYPE)/ml666-tokenizer-example \
      bin/$(TYPE)/ml666-parser-example \
      lib/$(TYPE)/libml666.a \
-     lib/$(TYPE)/libml666.so \
-     test
+     lib/$(TYPE)/libml666.so
 
 get-bin:
 	@echo bin/$(TYPE)/
