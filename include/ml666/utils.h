@@ -29,17 +29,55 @@ static inline void ml666_hashed_buffer__set(struct ml666_hashed_buffer* hashed, 
   hashed->hash   = ml666_hash_FNV_1a(content);
 }
 
+// Useful function to work with ml666_buffer
+
+struct ml666_buffer__dup_args {
+  struct ml666_buffer* dest;
+  struct ml666_buffer_ro src;
+  void* that;
+  void*(*malloc)(void* that, size_t);
+};
+typedef bool ml666_buffer__cb__dup_p(struct ml666_buffer__dup_args a);
+#define ml666_buffer__dup(...) ml666_buffer__dup_p((struct ml666_buffer__dup_args){__VA_ARGS__})
+ml666_buffer__cb__dup_p ml666_buffer__dup_p;
+
+struct ml666_hashed_buffer__dup_args {
+  struct ml666_hashed_buffer* dest;
+  struct ml666_hashed_buffer src;
+  void* that;
+  void*(*malloc)(void* that, size_t);
+  ml666_buffer__cb__dup_p* dup;
+};
+typedef bool ml666_hashed_buffer__cb__dup_p(struct ml666_hashed_buffer__dup_args a);
+#define ml666_hashed_buffer__dup(...) ml666_hashed_buffer__dup_p((struct ml666_hashed_buffer__dup_args){__VA_ARGS__})
+ml666_hashed_buffer__cb__dup_p ml666_hashed_buffer__dup_p;
+
+struct ml666_buffer__clear_args {
+  struct ml666_buffer* buffer;
+  void* that;
+  void (*free)(void* that, void* ptr);
+};
+typedef bool ml666_buffer__cb__clear_p(struct ml666_buffer__clear_args a);
+#define ml666_buffer__clear(...) ml666_buffer__clear_p((struct ml666_buffer__dup_args){__VA_ARGS__})
+ml666_buffer__cb__clear_p ml666_buffer__clear_p;
+
+struct ml666_hashed_buffer__clear_args {
+  struct ml666_hashed_buffer* buffer;
+  void* that;
+  void (*free)(void* that, void* ptr);
+  ml666_buffer__cb__clear_p* clear;
+};
+typedef bool ml666_hashed_buffer__cb__clear_p(struct ml666_hashed_buffer__clear_args a);
+#define ml666_hashed_buffer__clear(...) ml666_hashed_buffer__clear_p((struct ml666_hashed_buffer__clear_args){__VA_ARGS__})
+ml666_hashed_buffer__cb__clear_p ml666_hashed_buffer__clear_p;
+
+
 
 //// hashed_buffer_set api
 
 // The first entry must be a struct ml666_hashed_buffer instance.
-struct ml666_hashed_buffer_set_entry;
-
-static inline const struct ml666_hashed_buffer* ml666_hashed_buffer_set__peek(const struct ml666_hashed_buffer_set_entry* entry){
-  return (const struct ml666_hashed_buffer*)entry;
-}
-
 struct ml666_hashed_buffer_set;
+struct ml666_hashed_buffer_set_entry;
 
 typedef const struct ml666_hashed_buffer_set_entry* ml666_hashed_buffer_set__cb__add(
   struct ml666_hashed_buffer_set* buffer_set,
@@ -51,14 +89,23 @@ typedef void ml666_hashed_buffer_set__cb__put(
   const struct ml666_hashed_buffer_set_entry*
 );
 
+typedef void ml666_hashed_buffer_set__cb__destroy(struct ml666_hashed_buffer_set* buffer_set);
+
+
 struct ml666_hashed_buffer_set_cb {
   ml666_hashed_buffer_set__cb__add* add;
   ml666_hashed_buffer_set__cb__put* put;
+  ml666_hashed_buffer_set__cb__destroy* destroy;
 };
 
 struct ml666_hashed_buffer_set {
   const struct ml666_hashed_buffer_set_cb*const cb;
 };
+
+
+static inline const struct ml666_hashed_buffer* ml666_hashed_buffer_set__peek(const struct ml666_hashed_buffer_set_entry* entry){
+  return (const struct ml666_hashed_buffer*)entry;
+}
 
 static inline const struct ml666_hashed_buffer_set_entry* ml666_hashed_buffer_set__add(
   struct ml666_hashed_buffer_set* buffer_set,
@@ -75,15 +122,23 @@ static inline void ml666_hashed_buffer_set__put(
   buffer_set->cb->put(buffer_set, entry);
 }
 
+static inline void ml666_hashed_buffer_set__destroy(struct ml666_hashed_buffer_set* buffer_set){
+  buffer_set->cb->destroy(buffer_set);
+}
+
 
 // Default implementation
-ml666_hashed_buffer_set__cb__add ml666_hashed_buffer_set__d__add;
-ml666_hashed_buffer_set__cb__put ml666_hashed_buffer_set__d__put;
+struct ml666_hashed_buffer_set* ml666_get_default_hashed_buffer_set(void); // This returns a static buffer_set
 
-extern const struct ml666_hashed_buffer_set_cb ml666_default_hashed_buffer_cb;
-
-struct ml666_hashed_buffer_set* ml666_get_default_hashed_buffer_set(void);
-
+struct ml666_create_default_hashed_buffer_set_args {
+  void* that;
+  void*(*malloc)(void* that, size_t size);
+  void (*free)(void* that, void* ptr);
+  ml666_buffer__cb__dup_p* dup_buffer;
+  ml666_buffer__cb__clear_p* clear_buffer;
+};
+struct ml666_hashed_buffer_set* ml666_create_default_hashed_buffer_set_p(struct ml666_create_default_hashed_buffer_set_args); // This creates a buffer set with custom parameters
+#define ml666_create_default_hashed_buffer_set(...) ml666_create_default_hashed_buffer_set_p((struct ml666_create_default_hashed_buffer_set_args){__VA_ARGS__})
 ////
 
 #endif
