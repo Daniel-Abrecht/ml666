@@ -2,13 +2,14 @@
 #include <ml666/utils.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 
 ML666_DEFAULT_SIMPLE_TREE
 
 struct ml666_st_builder_default {
   struct ml666_st_builder super;
-  struct ml666_hashed_buffer_set* buffer_set;
+  struct ml666_st_builder_create_args a;
 };
 
 void ml666_st__d__node_put(struct ml666_st_builder* _stb, struct ml666_st_node* node){
@@ -19,7 +20,7 @@ void ml666_st__d__node_put(struct ml666_st_builder* _stb, struct ml666_st_node* 
     case ML666_ST_NT_DOCUMENT: break;
     case ML666_ST_NT_ELEMENT: {
       struct ml666_st_element* element = (struct ml666_st_element*)node;
-      ml666_hashed_buffer_set__put(stb->buffer_set, element->name);
+      ml666_hashed_buffer_set__put(stb->a.buffer_set, element->name);
     } break;
     case ML666_ST_NT_CONTENT: break;
     case ML666_ST_NT_COMMENT: break;
@@ -172,13 +173,14 @@ bool ml666_st__d__member_set(
   return true;
 }
 
-struct ml666_st_document* ml666_st__d__document_create(struct ml666_st_builder* stb){
-  (void)stb;
-  struct ml666_st_document* document = calloc(1, sizeof(*document));
+struct ml666_st_document* ml666_st__d__document_create(struct ml666_st_builder* _stb){
+  struct ml666_st_builder_default* stb = (struct ml666_st_builder_default*)_stb;
+  struct ml666_st_document* document = stb->a.malloc(stb->a.that, sizeof(*document));
   if(!document){
-    perror("calloc failed");
+    perror("malloc failed");
     return 0;
   }
+  memset(document, 0, sizeof(*document));
   document->node.type = ML666_ST_NT_DOCUMENT;
   document->node.refcount = 1;
   return document;
@@ -186,14 +188,15 @@ struct ml666_st_document* ml666_st__d__document_create(struct ml666_st_builder* 
 
 struct ml666_st_element* ml666_st__d__element_create(struct ml666_st_builder* _stb, const struct ml666_hashed_buffer* entry, bool copy_name){
   struct ml666_st_builder_default* stb = (struct ml666_st_builder_default*)_stb;
-  struct ml666_st_element* element = calloc(1, sizeof(struct ml666_st_element));
+  struct ml666_st_element* element = stb->a.malloc(stb->a.that, sizeof(*element));
   if(!element){
-    perror("calloc failed");
+    perror("malloc failed");
     return 0;
   }
+  memset(element, 0, sizeof(*element));
   element->member.node.type = ML666_ST_NT_ELEMENT;
   element->member.node.refcount = 1;
-  if(!(element->name = ml666_hashed_buffer_set__add(stb->buffer_set, entry, copy_name))){
+  if(!(element->name = ml666_hashed_buffer_set__add(stb->a.buffer_set, entry, copy_name))){
     ml666_st__d__node_put(&stb->super, &element->member.node);
     fprintf(stderr, "ml666_hashed_buffer_set::add failed");
     return 0;
@@ -201,23 +204,25 @@ struct ml666_st_element* ml666_st__d__element_create(struct ml666_st_builder* _s
   return element;
 }
 
-struct ml666_st_content* ml666_st__d__content_create(struct ml666_st_builder* stb){
-  (void)stb;
-  struct ml666_st_content* content = calloc(1, sizeof(struct ml666_st_content));
+struct ml666_st_content* ml666_st__d__content_create(struct ml666_st_builder* _stb){
+  struct ml666_st_builder_default* stb = (struct ml666_st_builder_default*)_stb;
+  struct ml666_st_content* content = stb->a.malloc(stb->a.that, sizeof(*content));
   if(!content){
-    perror("calloc failed");
+    perror("malloc failed");
     return 0;
   }
+  memset(content, 0, sizeof(*content));
   return content;
 }
 
-struct ml666_st_comment* ml666_st__d__comment_create(struct ml666_st_builder* stb){
-  (void)stb;
-  struct ml666_st_comment* comment = calloc(1, sizeof(struct ml666_st_comment));
+struct ml666_st_comment* ml666_st__d__comment_create(struct ml666_st_builder* _stb){
+  struct ml666_st_builder_default* stb = (struct ml666_st_builder_default*)_stb;
+  struct ml666_st_comment* comment = stb->a.malloc(stb->a.that, sizeof(*comment));
   if(!comment){
-    perror("calloc failed");
+    perror("malloc failed");
     return 0;
   }
+  memset(comment, 0, sizeof(*comment));
   return comment;
 }
 
@@ -234,14 +239,19 @@ struct ml666_st_member* ml666_st__d__get_last_child(struct ml666_st_builder* stb
 ML666_ST_IMPLEMENTATION(ml666_default, ml666_st__d_)
 
 struct ml666_st_builder* ml666_st_builder_create_p(struct ml666_st_builder_create_args args){
-  struct ml666_st_builder_default* stb = calloc(1, sizeof(*stb));
+  if(!args.buffer_set)
+    args.buffer_set = ml666_get_default_hashed_buffer_set();
+  if(!args.malloc)
+    args.malloc = ml666__d__malloc;
+  if(!args.free)
+    args.free = ml666__d__free;
+  struct ml666_st_builder_default* stb = args.malloc(args.that, sizeof(*stb));
   *(const struct ml666_st_cb**)&stb->super.cb = &ml666_default_st_api;
-  stb->buffer_set = args.buffer_set;
-  if(!stb->buffer_set)
-    stb->buffer_set = ml666_get_default_hashed_buffer_set();
+  stb->a = args;
   return &stb->super;
 }
 
-void ml666_st_builder_destroy(struct ml666_st_builder* stb){
-  free(stb);
+void ml666_st_builder_destroy(struct ml666_st_builder* _stb){
+  struct ml666_st_builder_default* stb = (struct ml666_st_builder_default*)_stb;
+  stb->a.free(stb->a.that, stb);
 }

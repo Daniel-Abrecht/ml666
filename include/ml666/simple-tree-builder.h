@@ -7,6 +7,9 @@
 ML666_ST_DECLARATION(ml666_default, ml666_st__d_)
 
 struct ml666_st_builder_create_args {
+  void* that;
+  ml666__cb__malloc* malloc;
+  ml666__cb__free*   free;
   struct ml666_hashed_buffer_set* buffer_set;
 };
 

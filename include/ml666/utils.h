@@ -71,6 +71,8 @@ typedef bool ml666_hashed_buffer__cb__clear_p(struct ml666_hashed_buffer__clear_
 #define ml666_hashed_buffer__clear(...) ml666_hashed_buffer__clear_p((struct ml666_hashed_buffer__clear_args){__VA_ARGS__})
 ml666_hashed_buffer__cb__clear_p ml666_hashed_buffer__clear_p;
 
+ml666__cb__malloc ml666__d__malloc;
+ml666__cb__free   ml666__d__free;
 
 
 //// hashed_buffer_set api
@@ -126,14 +128,13 @@ static inline void ml666_hashed_buffer_set__destroy(struct ml666_hashed_buffer_s
   buffer_set->cb->destroy(buffer_set);
 }
 
-
 // Default implementation
 struct ml666_hashed_buffer_set* ml666_get_default_hashed_buffer_set(void); // This returns a static buffer_set
 
 struct ml666_create_default_hashed_buffer_set_args {
   void* that;
-  void*(*malloc)(void* that, size_t size);
-  void (*free)(void* that, void* ptr);
+  ml666__cb__malloc* malloc;
+  ml666__cb__free* free;
   ml666_buffer__cb__dup_p* dup_buffer;
   ml666_buffer__cb__clear_p* clear_buffer;
 };

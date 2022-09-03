@@ -102,11 +102,11 @@ const struct ml666_hashed_buffer_set_entry* ml666_hashed_buffer_set__d__add(stru
   struct ml666_hashed_buffer_set_default* buffer_set = (struct ml666_hashed_buffer_set_default*)_buffer_set;
   if(!buffer_set->entry_count++){
     buffer_set->bucket = buffer_set->a.malloc(buffer_set->a.that, sizeof(*buffer_set->bucket));
-    memset(buffer_set->bucket, 0, sizeof(*buffer_set->bucket));
     if(!buffer_set->bucket){
       perror("*malloc failed");
       return false;
     }
+    memset(buffer_set->bucket, 0, sizeof(*buffer_set->bucket));
   }
 
   const struct ml666_hashed_buffer c = *entry;
@@ -164,12 +164,12 @@ static const struct ml666_hashed_buffer_set_cb ml666_default_hashed_buffer_cb = 
   .destroy = ml666_hashed_buffer_set__d__destroy,
 };
 
-static void* cb_malloc(void* that, size_t size){
+void* ml666__d__malloc(void* that, size_t size){
   (void)that;
   return malloc(size);
 }
 
-static void cb_free(void* that, void* data){
+void ml666__d__free(void* that, void* data){
   (void)that;
   free(data);
 }
@@ -177,14 +177,22 @@ static void cb_free(void* that, void* data){
 static struct ml666_hashed_buffer_set_default default_buffer_set = {
   .super.cb = &ml666_default_hashed_buffer_cb,
   .a = {
-    .malloc = cb_malloc,
-    .free = cb_free,
+    .malloc = ml666__d__malloc,
+    .free = ml666__d__free,
     .dup_buffer = ml666_buffer__dup_p,
     .clear_buffer = ml666_buffer__clear_p,
   }
 };
 
 struct ml666_hashed_buffer_set* ml666_create_default_hashed_buffer_set_p(struct ml666_create_default_hashed_buffer_set_args args){
+  if(!args.malloc)
+    args.malloc = ml666__d__malloc;
+  if(!args.free)
+    args.free = ml666__d__free;
+  if(!args.dup_buffer)
+    args.dup_buffer = ml666_buffer__dup_p;
+  if(!args.clear_buffer)
+    args.clear_buffer = ml666_buffer__clear_p;
   struct ml666_hashed_buffer_set_default* buffer_set = args.malloc(args.that, sizeof(*buffer_set));
   if(!buffer_set){
     perror("*malloc failed");
