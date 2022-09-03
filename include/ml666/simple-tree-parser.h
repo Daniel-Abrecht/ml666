@@ -4,12 +4,15 @@
 #include <ml666/common.h>
 #include <stdbool.h>
 
-struct ml666_simple_tree_parser;
+struct ml666_simple_tree_parser {
+  struct ml666_st_builder*const stb;
+  void* user_ptr;
+};
 
 struct ml666_simple_tree_parser_create_args {
   struct ml666_st_builder* stb;
+  void* user_ptr;
   int fd;
-  void* that;
   ml666__cb__malloc* malloc;
   ml666__cb__free*   free;
 };
