@@ -195,6 +195,7 @@ struct ml666_parser* ml666_parser_create_p(struct ml666_parser_create_args args)
     goto error;
   }
   *(const struct ml666_parser_cb**)&parser->public.cb = args.cb;
+  parser->public.user_ptr = args.user_ptr;
   parser->tokenizer = ml666_tokenizer_create(args.fd);
   args.fd = -1;
   if(!parser->tokenizer)

@@ -97,12 +97,15 @@ struct ml666_simple_tree_parser* ml666_simple_tree_parser_create_p(struct ml666_
   stp->public.user_ptr = args.user_ptr;
   stp->malloc = args.malloc;
   stp->free = args.free;
-  stp->parser = ml666_parser_create( .fd = 0, .cb = &callbacks );
+  stp->parser = ml666_parser_create(
+    .fd = 0,
+    .cb = &callbacks,
+    .user_ptr = stp
+  );
   if(!stp->parser){
     fprintf(stderr, "ml666_parser_create failed");
     return false;
   }
-  stp->parser->user_ptr = stp;
   struct ml666_st_document* document = ml666_st_document_create(stp->public.stb);
   if(!document){
     args.free(args.user_ptr, stp);

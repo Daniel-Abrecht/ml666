@@ -66,6 +66,7 @@ struct ml666_parser_cb {
 struct ml666_parser_create_args {
   const struct ml666_parser_cb* cb;
   int fd;
+  void* user_ptr;
 };
 struct ml666_parser* ml666_parser_create_p(struct ml666_parser_create_args args);
 #define ml666_parser_create(...) ml666_parser_create_p((struct ml666_parser_create_args){__VA_ARGS__})
