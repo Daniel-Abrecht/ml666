@@ -204,7 +204,7 @@ struct ml666_parser* ml666_parser_create_p(struct ml666_parser_create_args args)
   return &parser->public;
 
 error_after_tokenizer:
-  free(parser->tokenizer);
+  ml666_tokenizer_destroy(parser->tokenizer);
 error_after_calloc:
   free(parser);
 error:
