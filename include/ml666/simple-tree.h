@@ -24,6 +24,7 @@ struct ml666_st_comment;
 
 struct ml666_st_builder {
   const struct ml666_st_cb*const cb;
+  void* user_ptr;
 };
 
 #define ML666_ST_TYPE(X) \

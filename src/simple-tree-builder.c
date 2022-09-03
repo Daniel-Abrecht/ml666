@@ -8,7 +8,7 @@
 ML666_DEFAULT_SIMPLE_TREE
 
 struct ml666_st_builder_default {
-  struct ml666_st_builder super;
+  struct ml666_st_builder public;
   struct ml666_st_builder_create_args a;
 };
 
@@ -175,7 +175,7 @@ bool ml666_st__d__member_set(
 
 struct ml666_st_document* ml666_st__d__document_create(struct ml666_st_builder* _stb){
   struct ml666_st_builder_default* stb = (struct ml666_st_builder_default*)_stb;
-  struct ml666_st_document* document = stb->a.malloc(stb->a.that, sizeof(*document));
+  struct ml666_st_document* document = stb->a.malloc(stb->public.user_ptr, sizeof(*document));
   if(!document){
     perror("malloc failed");
     return 0;
@@ -188,7 +188,7 @@ struct ml666_st_document* ml666_st__d__document_create(struct ml666_st_builder* 
 
 struct ml666_st_element* ml666_st__d__element_create(struct ml666_st_builder* _stb, const struct ml666_hashed_buffer* entry, bool copy_name){
   struct ml666_st_builder_default* stb = (struct ml666_st_builder_default*)_stb;
-  struct ml666_st_element* element = stb->a.malloc(stb->a.that, sizeof(*element));
+  struct ml666_st_element* element = stb->a.malloc(stb->public.user_ptr, sizeof(*element));
   if(!element){
     perror("malloc failed");
     return 0;
@@ -197,7 +197,7 @@ struct ml666_st_element* ml666_st__d__element_create(struct ml666_st_builder* _s
   element->member.node.type = ML666_ST_NT_ELEMENT;
   element->member.node.refcount = 1;
   if(!(element->name = ml666_hashed_buffer_set__add(stb->a.buffer_set, entry, copy_name))){
-    ml666_st__d__node_put(&stb->super, &element->member.node);
+    ml666_st__d__node_put(&stb->public, &element->member.node);
     fprintf(stderr, "ml666_hashed_buffer_set::add failed");
     return 0;
   }
@@ -206,7 +206,7 @@ struct ml666_st_element* ml666_st__d__element_create(struct ml666_st_builder* _s
 
 struct ml666_st_content* ml666_st__d__content_create(struct ml666_st_builder* _stb){
   struct ml666_st_builder_default* stb = (struct ml666_st_builder_default*)_stb;
-  struct ml666_st_content* content = stb->a.malloc(stb->a.that, sizeof(*content));
+  struct ml666_st_content* content = stb->a.malloc(stb->public.user_ptr, sizeof(*content));
   if(!content){
     perror("malloc failed");
     return 0;
@@ -217,7 +217,7 @@ struct ml666_st_content* ml666_st__d__content_create(struct ml666_st_builder* _s
 
 struct ml666_st_comment* ml666_st__d__comment_create(struct ml666_st_builder* _stb){
   struct ml666_st_builder_default* stb = (struct ml666_st_builder_default*)_stb;
-  struct ml666_st_comment* comment = stb->a.malloc(stb->a.that, sizeof(*comment));
+  struct ml666_st_comment* comment = stb->a.malloc(stb->public.user_ptr, sizeof(*comment));
   if(!comment){
     perror("malloc failed");
     return 0;
@@ -245,13 +245,14 @@ struct ml666_st_builder* ml666_st_builder_create_p(struct ml666_st_builder_creat
     args.malloc = ml666__d__malloc;
   if(!args.free)
     args.free = ml666__d__free;
-  struct ml666_st_builder_default* stb = args.malloc(args.that, sizeof(*stb));
-  *(const struct ml666_st_cb**)&stb->super.cb = &ml666_default_st_api;
+  struct ml666_st_builder_default* stb = args.malloc(args.user_ptr, sizeof(*stb));
+  *(const struct ml666_st_cb**)&stb->public.cb = &ml666_default_st_api;
+  stb->public.user_ptr = args.user_ptr;
   stb->a = args;
-  return &stb->super;
+  return &stb->public;
 }
 
 void ml666_st_builder_destroy(struct ml666_st_builder* _stb){
   struct ml666_st_builder_default* stb = (struct ml666_st_builder_default*)_stb;
-  stb->a.free(stb->a.that, stb);
+  stb->a.free(stb->public.user_ptr, stb);
 }
