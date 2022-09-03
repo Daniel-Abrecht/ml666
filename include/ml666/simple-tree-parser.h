@@ -6,6 +6,7 @@
 
 struct ml666_simple_tree_parser {
   struct ml666_st_builder*const stb;
+  const char* error;
   void* user_ptr;
 };
 
@@ -22,6 +23,5 @@ struct ml666_simple_tree_parser* ml666_simple_tree_parser_create_p(struct ml666_
 void ml666_simple_tree_parser_destroy(struct ml666_simple_tree_parser* stp);
 bool ml666_simple_tree_parser_next(struct ml666_simple_tree_parser* stp);
 struct ml666_st_document* ml666_simple_tree_parser_take_document(struct ml666_simple_tree_parser* stp);
-const char* ml666_simple_tree_parser_get_error(struct ml666_simple_tree_parser* stp);
 
 #endif

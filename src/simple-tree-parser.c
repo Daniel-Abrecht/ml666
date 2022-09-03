@@ -15,7 +15,6 @@ struct ml666_simple_tree_parser_default {
   struct ml666_parser* parser;
   struct ml666_st_document* document;
   struct ml666_st_node* cur;
-  const char* error;
   ml666__cb__malloc* malloc;
   ml666__cb__free*   free;
 };
@@ -134,13 +133,8 @@ bool ml666_simple_tree_parser_next(struct ml666_simple_tree_parser* _stp){
     return false;
   bool res = ml666_parser_next(stp->parser);
   if(stp->parser->error)
-    stp->error = stp->parser->error;
+    stp->public.error = stp->parser->error;
   return res;
-}
-
-const char* ml666_simple_tree_parser_get_error(struct ml666_simple_tree_parser* _stp){
-  struct ml666_simple_tree_parser_default* stp = (struct ml666_simple_tree_parser_default*)_stp;
-  return stp->error;
 }
 
 

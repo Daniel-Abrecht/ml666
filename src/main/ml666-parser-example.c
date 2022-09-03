@@ -15,9 +15,8 @@ int main(){
     return 1;
   }
   while(ml666_simple_tree_parser_next(stp));
-  const char* error = ml666_simple_tree_parser_get_error(stp);
-  if(error){
-    fprintf(stderr, "ml666_parser_next failed: %s\n", error);
+  if(stp->error){
+    fprintf(stderr, "ml666_parser_next failed: %s\n", stp->error);
     return 1;
   }
   ml666_simple_tree_parser_destroy(stp);
