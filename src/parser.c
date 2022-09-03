@@ -63,6 +63,8 @@ static void ml666_parser__buffer_free(struct ml666_buffer* name){
 }
 
 static bool ml666_parser__buffer_append(struct ml666_buffer* buffer, struct ml666_buffer_ro data){
+  if(!data.length)
+    return true;
   const size_t old_size = buffer->length;
   const size_t new_size = old_size + data.length;
   if(new_size < data.length)
@@ -192,7 +194,7 @@ struct ml666_parser* ml666_parser_create_p(struct ml666_parser_create_args args)
     fprintf(stderr, "ml666_parser_create_p: calloc failed (%d): %s\n", errno, strerror(errno));
     goto error;
   }
-  parser->public.cb = args.cb;
+  *(const struct ml666_parser_cb**)&parser->public.cb = args.cb;
   parser->tokenizer = ml666_tokenizer_create(args.fd);
   args.fd = -1;
   if(!parser->tokenizer)

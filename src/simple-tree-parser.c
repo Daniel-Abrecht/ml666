@@ -16,6 +16,9 @@ struct ml666_simple_tree_parser {
   struct ml666_st_document* document;
   struct ml666_st_node* cur;
   const char* error;
+  void* that;
+  ml666__cb__malloc* malloc;
+  ml666__cb__free*   free;
 };
 
 static bool tag_push(struct ml666_parser* parser, ml666_opaque_tag_name* name){
@@ -82,12 +85,20 @@ static const struct ml666_parser_cb callbacks = {
 };
 
 struct ml666_simple_tree_parser* ml666_simple_tree_parser_create_p(struct ml666_simple_tree_parser_create_args args){
-  struct ml666_simple_tree_parser* stp = calloc(1, sizeof(*stp));
+  if(!args.malloc)
+    args.malloc = ml666__d__malloc;
+  if(!args.free)
+    args.free = ml666__d__free;
+  struct ml666_simple_tree_parser* stp = args.malloc(args.that, sizeof(*stp));
   if(!stp){
     stp->parser->error = "calloc failed";
     return false;
   }
+  memset(stp, 0, sizeof(*stp));
   stp->stb = args.stb;
+  stp->that = args.that;
+  stp->malloc = args.malloc;
+  stp->free = args.free;
   stp->parser = ml666_parser_create( .fd = 0, .cb = &callbacks );
   if(!stp->parser){
     fprintf(stderr, "ml666_parser_create failed");
@@ -96,7 +107,7 @@ struct ml666_simple_tree_parser* ml666_simple_tree_parser_create_p(struct ml666_
   stp->parser->user_ptr = stp;
   struct ml666_st_document* document = ml666_st_document_create(stp->stb);
   if(!document){
-    free(stp);
+    args.free(args.that, stp);
     fprintf(stderr, "ml666_st_document_create failed");
     return false;
   }
@@ -114,7 +125,7 @@ void ml666_simple_tree_parser_destroy(struct ml666_simple_tree_parser* stp){
   }
   if(stp->parser)
     ml666_parser_destroy(stp->parser);
-  free(stp);
+  stp->free(stp->that, stp);
 }
 
 bool ml666_simple_tree_parser_next(struct ml666_simple_tree_parser* stp){

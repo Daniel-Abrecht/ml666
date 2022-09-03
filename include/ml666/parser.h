@@ -7,7 +7,7 @@
 
 
 struct ml666_parser {
-  const struct ml666_parser_cb* cb;
+  const struct ml666_parser_cb*const cb;
   void* user_ptr;
   const char* error;
   bool done;
