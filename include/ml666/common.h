@@ -20,6 +20,7 @@ struct ml666_buffer {
 };
 
 typedef void* ml666__cb__malloc(void* that, size_t size);
+typedef void* ml666__cb__realloc(void* that, void* ptr, size_t size);
 typedef void  ml666__cb__free(void* that, void* ptr);
 
 #endif

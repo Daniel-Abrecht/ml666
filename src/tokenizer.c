@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <ml666/tokenizer.h>
+#include <ml666/utils.h>
 
 #define ML666__STATE \
   X(ML666__STATE_EOF) \
@@ -72,6 +73,8 @@ struct ml666__tokenizer_private {
     enum ml666__state comment_next_state;
     enum ml666__text_encoding text_encoding;
   };
+  ml666__cb__malloc* malloc;
+  ml666__cb__free*   free;
 };
 static_assert(offsetof(struct ml666__tokenizer_private, public) == 0, "ml666__tokenizer_private::super must be the first member");
 
@@ -106,13 +109,21 @@ static void init(void){
   space_page = x;
 }
 
-struct ml666_tokenizer* ml666_tokenizer_create(int fd){
-  struct ml666__tokenizer_private*restrict tokenizer = calloc(1, sizeof(struct ml666__tokenizer_private));
+struct ml666_tokenizer* ml666_tokenizer_create_p(struct ml666_tokenizer_create_args args){
+  if(!args.malloc)
+    args.malloc = ml666__d__malloc;
+  if(!args.free)
+    args.free = ml666__d__free;
+  struct ml666__tokenizer_private*restrict tokenizer = args.malloc(args.user_ptr, sizeof(*tokenizer));
   if(!tokenizer){
     fprintf(stderr, "%s:%u: memfd_create failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
     goto error;
   }
-  tokenizer->fd = fd;
+  memset(tokenizer, 0, sizeof(*tokenizer));
+  tokenizer->fd = args.fd;
+  tokenizer->malloc = args.malloc;
+  tokenizer->free = args.free;
+  tokenizer->public.user_ptr = args.user_ptr;
   tokenizer->public.line = 1;
   tokenizer->public.column = 1;
 
@@ -172,9 +183,9 @@ error_mmap:
 error_memfd:
   close(memfd);
 error_calloc:
-  free(tokenizer);
+  args.free(args.user_ptr, tokenizer);
 error:
-  close(fd);
+  close(args.fd);
   return 0;
 }
 
@@ -734,5 +745,5 @@ void ml666_tokenizer_destroy(struct ml666_tokenizer* _tokenizer){
     fprintf(stderr, "%s:%u: munmap failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
   if(tokenizer->fd != -1 && close(tokenizer->fd))
     fprintf(stderr, "%s:%u: close failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
-  free(tokenizer);
+  tokenizer->free(tokenizer->public.user_ptr, tokenizer);
 }

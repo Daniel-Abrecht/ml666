@@ -30,9 +30,17 @@ struct ml666_tokenizer {
   bool complete;
   const char* error;
   size_t line, column;
+  void* user_ptr;
 };
 
-struct ml666_tokenizer* ml666_tokenizer_create(int fd);
+struct ml666_tokenizer_create_args {
+  int fd;
+  void* user_ptr;
+  ml666__cb__malloc* malloc;
+  ml666__cb__free*   free;
+};
+struct ml666_tokenizer* ml666_tokenizer_create_p(struct ml666_tokenizer_create_args args);
+#define ml666_tokenizer_create(...) ml666_tokenizer_create_p((struct ml666_tokenizer_create_args){__VA_ARGS__})
 bool ml666_tokenizer_next(struct ml666_tokenizer* state); // returns false on EOF
 void ml666_tokenizer_destroy(struct ml666_tokenizer* state);
 

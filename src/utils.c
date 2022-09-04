@@ -169,6 +169,11 @@ void* ml666__d__malloc(void* that, size_t size){
   return malloc(size);
 }
 
+void* ml666__d__realloc(void* that, void* data, size_t size){
+  (void)that;
+  return realloc(data, size);
+}
+
 void ml666__d__free(void* that, void* data){
   (void)that;
   free(data);

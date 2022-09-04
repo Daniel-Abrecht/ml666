@@ -1,5 +1,6 @@
 #include <ml666/parser.h>
 #include <ml666/tokenizer.h>
+#include <ml666/utils.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -30,6 +31,10 @@ struct ml666__parser_private {
       struct ml666_opaque_attribute_name attribute_name;
     };
   } default_hander_state;
+
+  ml666__cb__malloc* malloc;
+  ml666__cb__realloc* realloc;
+  ml666__cb__free* free;
 };
 static_assert(offsetof(struct ml666__parser_private, public) == 0);
 
@@ -52,24 +57,14 @@ static void ml666_parser_a_cleanup(struct ml666__parser_private* that){
   ml666_tokenizer_destroy(that->tokenizer);
 }
 
-static void ml666_parser__buffer_free(struct ml666_buffer* name){
-  if(!name)
-    return;
-  if(name->data){
-    free(name->data);
-    name->data = 0;
-    name->length = 0;
-  }
-}
-
-static bool ml666_parser__buffer_append(struct ml666_buffer* buffer, struct ml666_buffer_ro data){
+static bool ml666_parser__buffer_append(struct ml666_buffer* buffer, struct ml666_buffer_ro data, void* that, ml666__cb__realloc* cb_realloc){
   if(!data.length)
     return true;
   const size_t old_size = buffer->length;
   const size_t new_size = old_size + data.length;
   if(new_size < data.length)
     return false;
-  char* content = realloc(buffer->data, new_size);
+  char* content = cb_realloc(that, buffer->data, new_size);
   if(!content)
     return false;
   buffer->data = content;
@@ -82,24 +77,36 @@ bool ml666_parser__d_mal__tag_name_append(struct ml666_parser* _that, ml666_opaq
   struct ml666__parser_private* that = (struct ml666__parser_private*)_that;
   if(!*name)
     *name = &that->default_hander_state.tag_name;
-  return ml666_parser__buffer_append(&(*name)->buffer, data);
+  return ml666_parser__buffer_append(&(*name)->buffer, data, that->public.user_ptr, that->realloc);
 }
 
 bool ml666_parser__d_mal__attribute_name_append(struct ml666_parser* _that, ml666_opaque_attribute_name* name, struct ml666_buffer_ro data){
   struct ml666__parser_private* that = (struct ml666__parser_private*)_that;
   if(!*name)
     *name = &that->default_hander_state.attribute_name;
-  return ml666_parser__buffer_append(&(*name)->buffer, data);
+  return ml666_parser__buffer_append(&(*name)->buffer, data, that->public.user_ptr, that->realloc);
 }
 
-void ml666_parser__d_mal__tag_name_free(struct ml666_parser* that, ml666_opaque_tag_name name){
-  (void)that;
-  ml666_parser__buffer_free(&name->buffer);
+void ml666_parser__d_mal__tag_name_free(struct ml666_parser* _that, ml666_opaque_tag_name name){
+  struct ml666__parser_private* that = (struct ml666__parser_private*)_that;
+  if(!name)
+    return;
+  if(name->buffer.data){
+    that->realloc(that->public.user_ptr, name->buffer.data, 0);
+    name->buffer.data = 0;
+    name->buffer.length = 0;
+  }
 }
 
-void ml666_parser__d_mal__attribute_name_free(struct ml666_parser* that, ml666_opaque_attribute_name name){
-  (void)that;
-  ml666_parser__buffer_free(&name->buffer);
+void ml666_parser__d_mal__attribute_name_free(struct ml666_parser* _that, ml666_opaque_attribute_name name){
+  struct ml666__parser_private* that = (struct ml666__parser_private*)_that;
+  if(!name)
+    return;
+  if(name->buffer.data){
+    that->realloc(that->public.user_ptr, name->buffer.data, 0);
+    name->buffer.data = 0;
+    name->buffer.length = 0;
+  }
 }
 
 static bool ml666_parser_a_tag_name_append(struct ml666__parser_private* that, ml666_opaque_tag_name* name, struct ml666_buffer_ro data){
@@ -189,14 +196,24 @@ struct ml666_parser* ml666_parser_create_p(struct ml666_parser_create_args args)
   }
   if(fail)
     goto error;
-  struct ml666__parser_private* parser = calloc(1, sizeof(*parser));
+  if(!args.malloc)
+    args.malloc = ml666__d__malloc;
+  if(!args.realloc)
+    args.realloc = ml666__d__realloc;
+  if(!args.free)
+    args.free = ml666__d__free;
+  struct ml666__parser_private* parser = args.malloc(args.user_ptr, sizeof(*parser));
   if(!parser){
-    fprintf(stderr, "ml666_parser_create_p: calloc failed (%d): %s\n", errno, strerror(errno));
+    fprintf(stderr, "ml666_parser_create_p: *malloc failed (%d): %s\n", errno, strerror(errno));
     goto error;
   }
+  memset(parser, 0, sizeof(*parser));
   *(const struct ml666_parser_cb**)&parser->public.cb = args.cb;
   parser->public.user_ptr = args.user_ptr;
-  parser->tokenizer = ml666_tokenizer_create(args.fd);
+  parser->malloc = args.malloc;
+  parser->realloc = args.realloc;
+  parser->free = args.free;
+  parser->tokenizer = ml666_tokenizer_create(args.fd, .user_ptr=0, .malloc=args.malloc, .free=args.free);
   args.fd = -1;
   if(!parser->tokenizer)
     goto error_after_calloc;
@@ -207,7 +224,7 @@ struct ml666_parser* ml666_parser_create_p(struct ml666_parser_create_args args)
 error_after_tokenizer:
   ml666_tokenizer_destroy(parser->tokenizer);
 error_after_calloc:
-  free(parser);
+  args.free(args.user_ptr, parser);
 error:
   if(args.fd >= 0)
     close(args.fd);
@@ -336,5 +353,5 @@ bool ml666_parser_next(struct ml666_parser* _parser){
 void ml666_parser_destroy(struct ml666_parser* _parser){
   struct ml666__parser_private* parser = (struct ml666__parser_private*)_parser;
   ml666_parser_a_cleanup(parser);
-  free(parser);
+  parser->free(parser->public.user_ptr, parser);
 }

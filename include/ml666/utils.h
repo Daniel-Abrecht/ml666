@@ -71,8 +71,9 @@ typedef bool ml666_hashed_buffer__cb__clear_p(struct ml666_hashed_buffer__clear_
 #define ml666_hashed_buffer__clear(...) ml666_hashed_buffer__clear_p((struct ml666_hashed_buffer__clear_args){__VA_ARGS__})
 ml666_hashed_buffer__cb__clear_p ml666_hashed_buffer__clear_p;
 
-ml666__cb__malloc ml666__d__malloc;
-ml666__cb__free   ml666__d__free;
+ml666__cb__malloc  ml666__d__malloc;
+ml666__cb__realloc ml666__d__realloc;
+ml666__cb__free    ml666__d__free;
 
 
 //// hashed_buffer_set api

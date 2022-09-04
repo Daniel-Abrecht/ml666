@@ -25,7 +25,7 @@ void ml666_st__d__node_put(struct ml666_st_builder* _stb, struct ml666_st_node* 
     case ML666_ST_NT_CONTENT: break;
     case ML666_ST_NT_COMMENT: break;
   }
-  free(node);
+  stb->a.free(stb->public.user_ptr, node);
 }
 
 bool ml666_st__d__node_ref(struct ml666_st_builder* stb, struct ml666_st_node* node){
@@ -246,6 +246,7 @@ struct ml666_st_builder* ml666_st_builder_create_p(struct ml666_st_builder_creat
   if(!args.free)
     args.free = ml666__d__free;
   struct ml666_st_builder_default* stb = args.malloc(args.user_ptr, sizeof(*stb));
+  memset(stb, 0, sizeof(*stb));
   *(const struct ml666_st_cb**)&stb->public.cb = &ml666_default_st_api;
   stb->public.user_ptr = args.user_ptr;
   stb->a = args;
