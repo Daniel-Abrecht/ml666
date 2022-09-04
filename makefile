@@ -30,6 +30,7 @@ CFLAGS  += --std=c17
 CFLAGS  += -Iinclude
 CFLAGS  += -Wall -Wextra -pedantic -Werror
 CFLAGS  += -fstack-protector-all
+CFLAGS  += -Wno-missing-field-initializers
 
 ifndef debug
 CFLAGS  += -ffunction-sections -fdata-sections
@@ -41,7 +42,7 @@ OBJECTS := $(patsubst %,build/$(TYPE)/o/%.o,$(SOURCES))
 .PHONY: all clean get-bin get-lib install uninstall shell test
 
 all: bin/$(TYPE)/ml666-tokenizer-example \
-     bin/$(TYPE)/ml666-parser-example \
+     bin/$(TYPE)/ml666 \
      lib/$(TYPE)/libml666.a \
      lib/$(TYPE)/libml666.so
 

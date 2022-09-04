@@ -2,6 +2,7 @@
 #define ML666_COMMON_H
 
 #include <stddef.h>
+#include <stdint.h>
 
 // This must match struct ml666_buffer
 struct ml666_buffer_ro {
@@ -17,6 +18,11 @@ struct ml666_buffer {
       char* data;
     };
   };
+};
+
+struct ml666_hashed_buffer {
+  struct ml666_buffer_ro buffer;
+  uint64_t hash;
 };
 
 typedef void* ml666__cb__malloc(void* that, size_t size);

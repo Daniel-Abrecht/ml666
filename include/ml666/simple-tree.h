@@ -1,8 +1,9 @@
 #ifndef ML666_SIMPLE_TREE
 #define ML666_SIMPLE_TREE
 
-#include <ml666/utils.h>
+#include <ml666/common.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 // Must be the first member of struct ml666_st_node
 enum ml666_st_node_type {
@@ -239,6 +240,7 @@ static inline bool ml666_st_is_member(const struct ml666_st_node* node){
     case ML666_ST_NT_CONTENT: return true;
     case ML666_ST_NT_COMMENT: return true;
   }
+  return false;
 }
 
 static inline bool ml666_st_node_ref_set(struct ml666_st_builder* stb, struct ml666_st_node** dest, struct ml666_st_node* src){

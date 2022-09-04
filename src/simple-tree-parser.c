@@ -22,7 +22,7 @@ struct ml666_simple_tree_parser_default {
 static bool tag_push(struct ml666_parser* parser, ml666_opaque_tag_name* name){
   struct ml666_simple_tree_parser_default* stp = parser->user_ptr;
   if(!stp->cur){
-    printf("ml666_parser::tag_push: invalid parser state\n");
+    fprintf(stderr, "ml666_parser::tag_push: invalid parser state\n");
     return false;
   }
   struct ml666_hashed_buffer entry;
@@ -36,7 +36,7 @@ static bool tag_push(struct ml666_parser* parser, ml666_opaque_tag_name* name){
     return false;
   }
   if(!ml666_st_member_set(stp->public.stb, stp->cur, ML666_ST_MEMBER(element), 0)){
-    parser->error = "ml666_parser::tag_push: ml666_st_set failed";
+    parser->error = "ml666_parser::tag_push: ml666_st_set failed\n";
     ml666_st_node_put(stp->public.stb, ML666_ST_NODE(element));
     return false;
   }
@@ -83,13 +83,17 @@ static const struct ml666_parser_cb callbacks = {
 };
 
 struct ml666_simple_tree_parser* ml666_simple_tree_parser_create_p(struct ml666_simple_tree_parser_create_args args){
+  if(!args.stb){
+    fprintf(stderr, "ml666_simple_tree_parser_create_p: mandatory argument \"stb\" not set!\n");
+    return false;
+  }
   if(!args.malloc)
     args.malloc = ml666__d__malloc;
   if(!args.free)
     args.free = ml666__d__free;
   struct ml666_simple_tree_parser_default* stp = args.malloc(args.user_ptr, sizeof(*stp));
   if(!stp){
-    stp->parser->error = "calloc failed";
+    fprintf(stderr, "malloc failed");
     return false;
   }
   memset(stp, 0, sizeof(*stp));
@@ -103,13 +107,13 @@ struct ml666_simple_tree_parser* ml666_simple_tree_parser_create_p(struct ml666_
     .user_ptr = stp
   );
   if(!stp->parser){
-    fprintf(stderr, "ml666_parser_create failed");
+    fprintf(stderr, "ml666_parser_create failed\n");
     return false;
   }
   struct ml666_st_document* document = ml666_st_document_create(stp->public.stb);
   if(!document){
     args.free(args.user_ptr, stp);
-    fprintf(stderr, "ml666_st_document_create failed");
+    fprintf(stderr, "ml666_st_document_create failed\n");
     return false;
   }
   stp->document = document;

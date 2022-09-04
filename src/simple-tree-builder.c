@@ -198,7 +198,7 @@ struct ml666_st_element* ml666_st__d__element_create(struct ml666_st_builder* _s
   element->member.node.refcount = 1;
   if(!(element->name = ml666_hashed_buffer_set__add(stb->a.buffer_set, entry, copy_name))){
     ml666_st__d__node_put(&stb->public, &element->member.node);
-    fprintf(stderr, "ml666_hashed_buffer_set::add failed");
+    fprintf(stderr, "ml666_hashed_buffer_set::add failed\n");
     return 0;
   }
   return element;
@@ -246,6 +246,10 @@ struct ml666_st_builder* ml666_st_builder_create_p(struct ml666_st_builder_creat
   if(!args.free)
     args.free = ml666__d__free;
   struct ml666_st_builder_default* stb = args.malloc(args.user_ptr, sizeof(*stb));
+  if(!stb){
+    fprintf(stderr, "malloc failed");
+    return false;
+  }
   memset(stb, 0, sizeof(*stb));
   *(const struct ml666_st_cb**)&stb->public.cb = &ml666_default_st_api;
   stb->public.user_ptr = args.user_ptr;

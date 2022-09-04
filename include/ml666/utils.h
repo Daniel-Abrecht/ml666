@@ -19,11 +19,6 @@ static inline uint64_t ml666_hash_FNV_1a(struct ml666_buffer_ro buf){
   return ml666_hash_FNV_1a_append(buf, ML666_FNV_OFFSET_BASIS);
 }
 
-struct ml666_hashed_buffer {
-  struct ml666_buffer_ro buffer;
-  uint64_t hash;
-};
-
 static inline void ml666_hashed_buffer__set(struct ml666_hashed_buffer* hashed, struct ml666_buffer_ro content){
   hashed->buffer = content;
   hashed->hash   = ml666_hash_FNV_1a(content);

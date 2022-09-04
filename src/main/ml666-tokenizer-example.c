@@ -9,7 +9,7 @@ static bool ml666__print_buf_escaped(int fd, const struct ml666_buffer_ro ro);
 int main(){
   struct ml666_tokenizer* tokenizer = ml666_tokenizer_create(0);
   if(!tokenizer){
-    fprintf(stderr, "ml666_tokenizer_create failed");
+    fprintf(stderr, "ml666_tokenizer_create failed\n");
     return 1;
   }
   while(ml666_tokenizer_next(tokenizer)){

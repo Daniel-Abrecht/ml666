@@ -138,7 +138,7 @@ const struct ml666_hashed_buffer_set_entry* ml666_hashed_buffer_set__d__add(stru
       .dup = buffer_set->a.dup_buffer
     )){
       buffer_set->a.free(buffer_set->a.that, result);
-      fprintf(stderr, "ml666_hashed_buffer_set__d__add: ml666_buffer__dup failed");
+      fprintf(stderr, "ml666_hashed_buffer_set__d__add: ml666_buffer__dup failed\n");
       return 0;
     }
     result->data.hash = c.hash;
