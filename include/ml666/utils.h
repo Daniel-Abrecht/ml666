@@ -9,6 +9,8 @@
 #define ML666_FNV_OFFSET_BASIS ((uint64_t)0xCBF29CE484222325llu)
 
 
+// Hashing
+
 static inline uint64_t ml666_hash_FNV_1a_append(struct ml666_buffer_ro buf, uint_fast64_t hash){
   for(size_t i=0, n=buf.length; i<n; i++)
     hash = (hash ^ buf.data[i]) * ML666_FNV_PRIME;
@@ -23,6 +25,15 @@ static inline void ml666_hashed_buffer__set(struct ml666_hashed_buffer* hashed, 
   hashed->buffer = content;
   hashed->hash   = ml666_hash_FNV_1a(content);
 }
+
+// UTF-8
+
+struct streaming_utf8_validator {
+  uint_least8_t index : 3;
+  uint_least8_t state : 4;
+};
+
+bool utf8_validate(struct streaming_utf8_validator*restrict const v, const int _ch);
 
 // Useful function to work with ml666_buffer
 

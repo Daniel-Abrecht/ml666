@@ -3,9 +3,12 @@
 This is about the format and how tokenizers & parsers are to treat it in general. For details about the implementation
 provided in this repo, see [ml666.md](ml666.md).
 
-The syntax assumes each character is an 8 bit byte. For the values of characters in the ABNF syntax, ASCII is used.
+The formal syntax assumes each character is an 8 bit byte. For the values of characters in the ABNF syntax, ASCII is used.
+However, the encoded ml666 document itself must be valid, normalized utf-8 data without any utf-16 surrogates or BOMs,
+and without any noncharacter codepoints, with the exception of the optional (and *not* recommended) utf8 BOM.
+Any program reading an ml666 document must validate that the document meets these criteria.
 The decoded contents of all tokens is binary data. But if a program chooses to interpret any of them as text, it
-must encode/decode it using utf8 itself, and it must verify the validity of the unicode data itself.
+must encode/decode it using utf8 itself, and it must verify the validity of the decoded unicode data itself.
 
 Take a look at the [syntax.abnf](syntax.abnf) file for the syntax. The tokens the tokenizer should emit are indicated in uppercase.
 The `document` token matches the whole ml666 file. The tokenizer may choose to reuse the `END_TAG` token instead of
