@@ -77,7 +77,7 @@ struct ml666__tokenizer_private {
   ml666__cb__malloc* malloc;
   ml666__cb__free*   free;
 };
-static_assert(offsetof(struct ml666__tokenizer_private, public) == 0, "ml666__tokenizer_private::super must be the first member");
+static_assert(offsetof(struct ml666__tokenizer_private, public) == 0, "ml666__tokenizer_private::public must be the first member");
 
 const char*const ml666__token_name[] = {
 #define X(Y) #Y,
