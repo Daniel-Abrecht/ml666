@@ -22,10 +22,12 @@
   X(SERIALIZER_W_END_TAG_END) \
   X(SERIALIZER_W_CONTENT_START) \
   X(SERIALIZER_W_CONTENT) \
-  X(SERIALIZER_W_CONTENT_END) \
+  X(SERIALIZER_W_CONTENT_END_1) \
+  X(SERIALIZER_W_CONTENT_END_2) \
   X(SERIALIZER_W_COMMENT_START) \
   X(SERIALIZER_W_COMMENT) \
-  X(SERIALIZER_W_COMMENT_END)
+  X(SERIALIZER_W_COMMENT_END_1) \
+  X(SERIALIZER_W_COMMENT_END_2)
 
 enum serializer_state {
 #define X(Y) Y,
@@ -150,8 +152,8 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
                   }else{
                     outbuf.data[j++] = '\\';
                     outbuf.data[j++] = 'x';
-                    outbuf.data[j++] = ch >> 4;
-                    outbuf.data[j++] = ch & 0xFF;
+                    outbuf.data[j++] = '0' + (ch >> 4);
+                    outbuf.data[j++] = '0' + (ch & 0xF);
                   }
                 } break;
               }
@@ -268,16 +270,49 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
           sts->state = SERIALIZER_W_NEXT_MEMBER;
         } break;
         case SERIALIZER_W_CONTENT_START: {
+          sts->data.data = "`\n";
+          sts->data.length = 2;
+          sts->spaces = sts->level * 2;
+          sts->state = SERIALIZER_W_CONTENT;
         } break;
         case SERIALIZER_W_CONTENT: {
+          // TODO: Consider base64 encoding if overhead is lower
+          sts->data = ml666_st_content_get(sts->public.stb, ML666_ST_U_CONTENT(sts->cur)).ro;
+          sts->state = SERIALIZER_W_CONTENT_END_1;
         } break;
-        case SERIALIZER_W_CONTENT_END: {
+        case SERIALIZER_W_CONTENT_END_1: {
+          sts->data.data = "\n";
+          sts->data.length = 1;
+          sts->state = SERIALIZER_W_CONTENT_END_2;
+        } break;
+        case SERIALIZER_W_CONTENT_END_2: {
+          // TODO: Check if content has any newlines, or if it should be on a single line
+          sts->data.data = "`\n";
+          sts->data.length = 2;
+          sts->spaces = sts->level * 2;
+          sts->state = SERIALIZER_W_NEXT_MEMBER;
         } break;
         case SERIALIZER_W_COMMENT_START: {
+          // TODO: Check if comment has any newlines, or if it should be on a single line
+          sts->spaces = sts->level * 2;
+          sts->data.data = "/*\n";
+          sts->data.length = 3;
+          sts->state = SERIALIZER_W_COMMENT;
         } break;
         case SERIALIZER_W_COMMENT: {
+          sts->data = ml666_st_comment_get(sts->public.stb, ML666_ST_U_COMMENT(sts->cur)).ro;
+          sts->state = SERIALIZER_W_COMMENT_END_1;
         } break;
-        case SERIALIZER_W_COMMENT_END: {
+        case SERIALIZER_W_COMMENT_END_1: {
+          sts->data.data = "\n";
+          sts->data.length = 1;
+          sts->state = SERIALIZER_W_COMMENT_END_2;
+          sts->spaces = sts->level * 2;
+        } break;
+        case SERIALIZER_W_COMMENT_END_2: {
+          sts->data.data = "*/\n";
+          sts->data.length = 3;
+          sts->state = SERIALIZER_W_NEXT_MEMBER;
         } break;
       }
     }

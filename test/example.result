@@ -39,3 +39,5 @@
   89:  15: c ML666_TAG [9]: "Kitty Cat"
   89:  16: c ML666_END_TAG [0]: ""
   90:   8: c ML666_END_TAG [4]: "meow"
+  92:   7: c ML666_TAG [1]: "\x00"
+  92:   8: c ML666_END_TAG [0]: ""
