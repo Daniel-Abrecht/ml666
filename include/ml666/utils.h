@@ -64,7 +64,7 @@ struct ml666_buffer__clear_args {
   void (*free)(void* that, void* ptr);
 };
 typedef bool ml666_buffer__cb__clear_p(struct ml666_buffer__clear_args a);
-#define ml666_buffer__clear(...) ml666_buffer__clear_p((struct ml666_buffer__dup_args){__VA_ARGS__})
+#define ml666_buffer__clear(...) ml666_buffer__clear_p((struct ml666_buffer__clear_args){__VA_ARGS__})
 ml666_buffer__cb__clear_p ml666_buffer__clear_p;
 
 struct ml666_hashed_buffer__clear_args {

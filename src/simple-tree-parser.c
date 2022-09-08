@@ -15,16 +15,21 @@ struct ml666_simple_tree_parser_default {
   struct ml666_parser* parser;
   struct ml666_st_document* document;
   struct ml666_st_node* cur;
-  ml666__cb__malloc* malloc;
-  ml666__cb__free*   free;
+  struct ml666_st_content* current_content;
+  struct ml666_st_comment* current_comment;
+  ml666__cb__malloc*  malloc;
+  ml666__cb__realloc* realloc;
+  ml666__cb__free*    free;
 };
 
 static bool tag_push(struct ml666_parser* parser, ml666_opaque_tag_name* name){
   struct ml666_simple_tree_parser_default* stp = parser->user_ptr;
   if(!stp->cur){
-    fprintf(stderr, "ml666_parser::tag_push: invalid parser state\n");
+    parser->error = "simple_tree_parser::tag_push: invalid parser state\n";
     return false;
   }
+  stp->current_content = 0;
+  stp->current_comment = 0;
   struct ml666_hashed_buffer entry;
   ml666_hashed_buffer__set(&entry, (*name)->buffer.ro);
   bool copy_name = true; // Note: "false" only works if the allocator actually used malloc. Any other case will fail. "true" always works, but is more expencive.
@@ -32,11 +37,11 @@ static bool tag_push(struct ml666_parser* parser, ml666_opaque_tag_name* name){
   if(!copy_name)
     *name = 0;
   if(!element){
-    parser->error = "ml666_parser::tag_push: ml666_st_element_create\n";
+    parser->error = "simple_tree_parser::tag_push: ml666_st_element_create\n";
     return false;
   }
   if(!ml666_st_member_set(stp->public.stb, stp->cur, ML666_ST_MEMBER(element), 0)){
-    parser->error = "ml666_parser::tag_push: ml666_st_set failed\n";
+    parser->error = "simple_tree_parser::tag_push: ml666_st_set failed\n";
     ml666_st_node_put(stp->public.stb, ML666_ST_NODE(element));
     return false;
   }
@@ -71,12 +76,86 @@ static bool tag_pop(struct ml666_parser* parser){
   return ml666_st_node_ref_set(stp->public.stb, &stp->cur, parent);
 }
 
+bool data_append(struct ml666_parser* parser, struct ml666_buffer_ro data){
+  struct ml666_simple_tree_parser_default* stp = parser->user_ptr;
+  if(!stp->cur){
+    parser->error = "simple_tree_parser::data_append: invalid parser state\n";
+    return false;
+  }
+  stp->current_comment = 0;
+  if(!stp->current_content){
+    struct ml666_st_content* content = ml666_st_content_create(stp->public.stb);
+    if(!content){
+      parser->error = "simple_tree_parser::data_append: ml666_st_content_create failed\n";
+      return false;
+    }
+    if(!ml666_st_member_set(stp->public.stb, stp->cur, ML666_ST_MEMBER(content), 0)){
+      parser->error = "simple_tree_parser::data_append: ml666_st_set failed\n";
+      ml666_st_node_put(stp->public.stb, ML666_ST_NODE(content));
+      return false;
+    }
+    ml666_st_node_put(stp->public.stb, ML666_ST_NODE(content));
+    stp->current_content = content;
+  }
+  struct ml666_buffer buf = ml666_st_content_get(stp->public.stb, stp->current_content);
+  size_t length = buf.length + data.length;
+  char* newdata = stp->realloc(stp->public.user_ptr, buf.data, length);
+  if(!newdata){
+    parser->error = "simple_tree_parser::data_append: realloc failed\n";
+    return false;
+  }
+  memcpy(&newdata[buf.length], data.data, data.length);
+  buf.data = newdata;
+  buf.length = length;
+  ml666_st_content_set(stp->public.stb, stp->current_content, buf);
+  return true;
+}
+
+bool comment_append(struct ml666_parser* parser, struct ml666_buffer_ro data){
+  (void)data;
+  struct ml666_simple_tree_parser_default* stp = parser->user_ptr;
+  if(!stp->cur){
+    parser->error = "simple_tree_parser::data_append: invalid parser state\n";
+    return false;
+  }
+  stp->current_content = 0;
+  if(!stp->current_comment){
+    struct ml666_st_comment* comment = ml666_st_comment_create(stp->public.stb);
+    if(!comment){
+      parser->error = "simple_tree_parser::data_append: ml666_st_content_create failed\n";
+      return false;
+    }
+    if(!ml666_st_member_set(stp->public.stb, stp->cur, ML666_ST_MEMBER(comment), 0)){
+      parser->error = "simple_tree_parser::tag_push: ml666_st_set failed\n";
+      ml666_st_node_put(stp->public.stb, ML666_ST_NODE(comment));
+      return false;
+    }
+    ml666_st_node_put(stp->public.stb, ML666_ST_NODE(comment));
+    stp->current_comment = comment;
+  }
+  struct ml666_buffer buf = ml666_st_comment_get(stp->public.stb, stp->current_comment);
+  size_t length = buf.length + data.length;
+  char* newdata = stp->realloc(stp->public.user_ptr, buf.data, length);
+  if(!newdata){
+    parser->error = "simple_tree_parser::data_append: realloc failed\n";
+    return false;
+  }
+  memcpy(&newdata[buf.length], data.data, data.length);
+  buf.data = newdata;
+  buf.length = length;
+  ml666_st_comment_set(stp->public.stb, stp->current_comment, buf);
+  return true;
+}
+
+
 static const struct ml666_parser_cb callbacks = {
   .tag_name_append       = ml666_parser__d_mal__tag_name_append,
   .tag_name_free         = ml666_parser__d_mal__tag_name_free,
   .attribute_name_append = ml666_parser__d_mal__attribute_name_append,
   .attribute_name_free   = ml666_parser__d_mal__attribute_name_free,
 
+  .data_append = data_append,
+  .comment_append = comment_append,
   .tag_push = tag_push,
   .end_tag_check = end_tag_check,
   .tag_pop = tag_pop,
@@ -89,6 +168,8 @@ struct ml666_simple_tree_parser* ml666_simple_tree_parser_create_p(struct ml666_
   }
   if(!args.malloc)
     args.malloc = ml666__d__malloc;
+  if(!args.realloc)
+    args.realloc = ml666__d__realloc;
   if(!args.free)
     args.free = ml666__d__free;
   struct ml666_simple_tree_parser_default* stp = args.malloc(args.user_ptr, sizeof(*stp));
@@ -100,6 +181,7 @@ struct ml666_simple_tree_parser* ml666_simple_tree_parser_create_p(struct ml666_
   *(struct ml666_st_builder**)&stp->public.stb = args.stb;
   stp->public.user_ptr = args.user_ptr;
   stp->malloc = args.malloc;
+  stp->realloc = args.realloc;
   stp->free = args.free;
   stp->parser = ml666_parser_create(
     .fd = 0,

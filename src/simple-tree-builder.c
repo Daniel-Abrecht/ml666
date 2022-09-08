@@ -22,8 +22,14 @@ void ml666_st__d__node_put(struct ml666_st_builder* _stb, struct ml666_st_node* 
       struct ml666_st_element* element = (struct ml666_st_element*)node;
       ml666_hashed_buffer_set__put(stb->a.buffer_set, element->name);
     } break;
-    case ML666_ST_NT_CONTENT: break;
-    case ML666_ST_NT_COMMENT: break;
+    case ML666_ST_NT_CONTENT: {
+      struct ml666_st_content* content = (struct ml666_st_content*)node;
+      stb->a.free(stb->public.user_ptr, content->buffer.data);
+    } break;
+    case ML666_ST_NT_COMMENT: {
+      struct ml666_st_comment* comment = (struct ml666_st_comment*)node;
+      stb->a.free(stb->public.user_ptr, comment->buffer.data);
+    } break;
   }
   stb->a.free(stb->public.user_ptr, node);
 }
@@ -212,6 +218,8 @@ struct ml666_st_content* ml666_st__d__content_create(struct ml666_st_builder* _s
     return 0;
   }
   memset(content, 0, sizeof(*content));
+  content->member.node.type = ML666_ST_NT_CONTENT;
+  content->member.node.refcount = 1;
   return content;
 }
 
@@ -223,6 +231,8 @@ struct ml666_st_comment* ml666_st__d__comment_create(struct ml666_st_builder* _s
     return 0;
   }
   memset(comment, 0, sizeof(*comment));
+  comment->member.node.type = ML666_ST_NT_COMMENT;
+  comment->member.node.refcount = 1;
   return comment;
 }
 

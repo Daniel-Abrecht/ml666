@@ -15,8 +15,9 @@ struct ml666_simple_tree_parser_create_args {
   int fd;
   struct ml666_st_builder* stb;
   void* user_ptr;
-  ml666__cb__malloc* malloc;
-  ml666__cb__free*   free;
+  ml666__cb__malloc*  malloc;
+  ml666__cb__realloc* realloc;
+  ml666__cb__free*    free;
 };
 
 struct ml666_simple_tree_parser* ml666_simple_tree_parser_create_p(struct ml666_simple_tree_parser_create_args args);

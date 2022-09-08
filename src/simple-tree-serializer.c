@@ -51,6 +51,7 @@ struct ml666_st_serializer_private {
   struct ml666_st_node* node;
   int fd;
   unsigned level, spaces;
+  const char* esc_chars;
 
   struct ml666_st_node* cur;
   enum serializer_state state;
@@ -134,10 +135,10 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
           case ENC_ESCAPED: {
             while(i<buf.length && j<outbuf.length-4){
               unsigned char ch = buf.data[i++];
-              switch(ch){
-                case '*': case '/': case '>':
-                case '`': case '=': case ' ':
-                case '\\'  : outbuf.data[j++] = '\\'; outbuf.data[j++] = ch; break;
+              if(strchr(sts->esc_chars, ch)){
+                outbuf.data[j++] = '\\';
+                outbuf.data[j++] = ch;
+              }else switch(ch){
                 case '\a'  : outbuf.data[j++] = '\\'; outbuf.data[j++] = 'a'; break;
                 case '\b'  : outbuf.data[j++] = '\\'; outbuf.data[j++] = 'b'; break;
                 case '\x1B': outbuf.data[j++] = '\\'; outbuf.data[j++] = 'e'; break;
@@ -146,7 +147,7 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
                 case '\t'  : outbuf.data[j++] = '\\'; outbuf.data[j++] = 't'; break;
                 case '\v'  : outbuf.data[j++] = '\\'; outbuf.data[j++] = 'v'; break;
                 default: {
-                  if(ch > ' '){
+                  if(ch >= ' ' || ch == '\t'){
                     // TODO: Check for invalid utf8 sequences, and escape them
                     outbuf.data[j++] = ch;
                   }else{
@@ -184,7 +185,7 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
     }
     if(!sts->data.length){
       (void)serializer_state_name;
-  //    printf("%s\n", serializer_state_name[sts->state]);
+//       printf("%s\n", serializer_state_name[sts->state]); fflush(stdout);
       switch(sts->state){
         case SERIALIZER_W_DONE: break;
         case SERIALIZER_W_START: switch(ML666_ST_TYPE(sts->cur)){
@@ -230,6 +231,7 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
           sts->state = SERIALIZER_W_TAG;
         } break;
         case SERIALIZER_W_TAG: {
+          sts->esc_chars = "/>= \\";
           sts->encoding = ENC_ESCAPED;
           sts->data = ml666_hashed_buffer_set__peek(ml666_st_element_get_name(sts->public.stb, ML666_ST_U_ELEMENT(sts->cur)))->buffer;
           sts->state = SERIALIZER_W_TAG_END;
@@ -260,6 +262,7 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
           sts->state = SERIALIZER_W_END_TAG;
         } break;
         case SERIALIZER_W_END_TAG: {
+          sts->esc_chars = "/>= \\";
           sts->encoding = ENC_ESCAPED;
           sts->data = ml666_hashed_buffer_set__peek(ml666_st_element_get_name(sts->public.stb, ML666_ST_U_ELEMENT(sts->cur)))->buffer;
           sts->state = SERIALIZER_W_END_TAG_END;
@@ -277,6 +280,8 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
         } break;
         case SERIALIZER_W_CONTENT: {
           // TODO: Consider base64 encoding if overhead is lower
+          sts->esc_chars = "`\\";
+          sts->encoding = ENC_ESCAPED;
           sts->data = ml666_st_content_get(sts->public.stb, ML666_ST_U_CONTENT(sts->cur)).ro;
           sts->state = SERIALIZER_W_CONTENT_END_1;
         } break;
@@ -300,6 +305,8 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
           sts->state = SERIALIZER_W_COMMENT;
         } break;
         case SERIALIZER_W_COMMENT: {
+          sts->esc_chars = "*\\";
+          sts->encoding = ENC_ESCAPED;
           sts->data = ml666_st_comment_get(sts->public.stb, ML666_ST_U_COMMENT(sts->cur)).ro;
           sts->state = SERIALIZER_W_COMMENT_END_1;
         } break;
@@ -307,12 +314,12 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
           sts->data.data = "\n";
           sts->data.length = 1;
           sts->state = SERIALIZER_W_COMMENT_END_2;
-          sts->spaces = sts->level * 2;
         } break;
         case SERIALIZER_W_COMMENT_END_2: {
           sts->data.data = "*/\n";
           sts->data.length = 3;
           sts->state = SERIALIZER_W_NEXT_MEMBER;
+          sts->spaces = sts->level * 2;
         } break;
       }
     }
