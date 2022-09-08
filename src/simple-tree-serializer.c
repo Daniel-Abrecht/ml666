@@ -135,7 +135,7 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
           case ENC_ESCAPED: {
             while(i<buf.length && j<outbuf.length-4){
               unsigned char ch = buf.data[i++];
-              if(strchr(sts->esc_chars, ch)){
+              if(ch && strchr(sts->esc_chars, ch)){
                 outbuf.data[j++] = '\\';
                 outbuf.data[j++] = ch;
               }else switch(ch){
