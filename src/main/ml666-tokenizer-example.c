@@ -40,10 +40,11 @@ int main(){
 static const char ml666__hex[] = "0123456789ABCDEF";
 
 static char* ml666__escape_p(char ret[5], unsigned char x){
-  if(x < ' ' || (char)x == '"' || x >= 0x7F){
+  if(x < ' ' || (char)x == '"' || (char)x == '\\' || x >= 0x7F){
     ret[0] = '\\';
     switch((char)x){
       case '"'   : ret[1] = '"'; break;
+      case '\\'  : ret[1] = '\\'; break;
       case '\a'  : ret[1] = 'a'; break;
       case '\b'  : ret[1] = 'b'; break;
       case '\x1B': ret[1] = 'e'; break;

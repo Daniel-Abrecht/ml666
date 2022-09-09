@@ -9,6 +9,7 @@
 #define ML666_FNV_OFFSET_BASIS ((uint64_t)0xCBF29CE484222325llu)
 
 #define ML666_B36 "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+#define ML666_B64 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
 
 // Hashing
 
@@ -109,9 +110,23 @@ struct ml666_hashed_buffer__append_args {
 #define ml666_hashed_buffer__append(...) ml666_hashed_buffer__append_p((struct ml666_hashed_buffer__append_args){__VA_ARGS__})
 bool ml666_hashed_buffer__append_p(struct ml666_hashed_buffer__append_args args);
 
-ml666__cb__malloc  ml666__d__malloc;
-ml666__cb__realloc ml666__d__realloc;
-ml666__cb__free    ml666__d__free;
+enum ml666_buffer_info_best_encoding {
+  ML666_BIBE_ESCAPE,
+  ML666_BIBE_BASE64,
+};
+
+struct ml666_buffer_info {
+  bool multi_line : 1; // True if there is any newline
+  bool really_multi_line : 1; // Same, but excludes a final newlines
+  bool ends_with_newline : 1; // True if it ends with newlines.
+  bool ends_with_single_newline : 1; // True if it ends with a single newline.
+  bool is_fully_ascii : 1; // All characters are <0x80
+  bool is_valid_utf8 : 1;
+  bool has_null_bytes : 1; // This is commonly used to decide if some data is binary or not
+  enum ml666_buffer_info_best_encoding best_encoding : 1;
+};
+
+struct ml666_buffer_info ml666_buffer__analyze(struct ml666_buffer_ro buffer);
 
 
 //// hashed_buffer_set api
@@ -180,5 +195,12 @@ struct ml666_create_default_hashed_buffer_set_args {
 struct ml666_hashed_buffer_set* ml666_create_default_hashed_buffer_set_p(struct ml666_create_default_hashed_buffer_set_args); // This creates a buffer set with custom parameters
 #define ml666_create_default_hashed_buffer_set(...) ml666_create_default_hashed_buffer_set_p((struct ml666_create_default_hashed_buffer_set_args){__VA_ARGS__})
 ////
+
+
+// other stuff
+
+ml666__cb__malloc  ml666__d__malloc;
+ml666__cb__realloc ml666__d__realloc;
+ml666__cb__free    ml666__d__free;
 
 #endif

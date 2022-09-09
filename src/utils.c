@@ -104,6 +104,69 @@ bool ml666_hashed_buffer__append_p(struct ml666_hashed_buffer__append_args args)
   return true;
 }
 
+struct ml666_buffer_info ml666_buffer__analyze(struct ml666_buffer_ro buffer){
+  struct ml666_buffer_info bi = {0};
+  size_t length = buffer.length;
+  while(length && buffer.data[length-1] == '\n')
+    length--;
+  bi.ends_with_newline = length != buffer.length;
+  bi.ends_with_single_newline = buffer.length - length == 1;
+  for(size_t i=0; i<length; i++){
+    if(buffer.data[i] == '\n'){
+      bi.really_multi_line = true;
+      break;
+    }
+  }
+  bi.multi_line = bi.ends_with_newline || bi.really_multi_line;
+  bi.is_fully_ascii = true;
+  for(size_t i=0; i<length; i++){
+    if((unsigned char)buffer.data[i] < 0x80){
+      bi.is_fully_ascii = false;
+      break;
+    }
+  }
+  for(size_t i=0; i<length; i++){
+    if(!(unsigned char)buffer.data[i]){
+      bi.has_null_bytes = true;
+      break;
+    }
+  }
+  bi.is_valid_utf8 = true;
+  size_t approximated_escaped_overhead = 0;
+  struct streaming_utf8_validator u8v;
+  unsigned l = 0;
+  for(size_t i=0; i<length; i++){
+    {
+      unsigned char ch = buffer.data[i];
+      l = u8v.index ? l + 1 : 0;
+      if(!utf8_validate(&u8v, ch)){
+        bi.is_valid_utf8 = false;
+        goto count_invalid;
+      }
+      // Those characters <0x20 are valid utf8, but we escape most of those anyway,
+      // because having, for example, a null byte float around, isn't great.
+      if(ch >= 0x20)
+        continue;
+    }
+  count_invalid:
+    for(size_t j=i-l; j<=i; j++){
+      unsigned char ch = buffer.data[j];
+      switch(ch){
+        case ' ': case '\n': case '\t': break;
+        case '\a': case '\b': case '\x1B':
+        case '\v': case '\\': {
+          approximated_escaped_overhead += 1;
+        } break;
+        default: approximated_escaped_overhead += 3; break;
+      }
+    }
+  }
+  size_t approximated_base64_overhead = (length + 2) / 3 + 3;
+  bi.best_encoding = ML666_BIBE_ESCAPE;
+  if(approximated_base64_overhead < approximated_escaped_overhead)
+    bi.best_encoding = ML666_BIBE_BASE64;
+  return bi;
+}
 
 void ml666_hashed_buffer_set__d__put(struct ml666_hashed_buffer_set* _buffer_set, const struct ml666_hashed_buffer_set_entry* _entry){
   struct ml666_hashed_buffer_set_default* buffer_set = (struct ml666_hashed_buffer_set_default*)_buffer_set;

@@ -52,6 +52,7 @@ struct ml666_st_serializer_private {
   int fd;
   unsigned level, spaces;
   const char* esc_chars;
+  struct ml666_buffer_info buffer_info;
 
   struct ml666_st_node* cur;
   enum serializer_state state;
@@ -163,7 +164,38 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
             }
           } break;
           case ENC_BASE64: {
-            // TODO
+            size_t len = buf.length - (buf.length % 3);
+            unsigned char* data = (unsigned char*)buf.data;
+            while(i<len && j<outbuf.length-5){
+              if(i && i % (80/4*3-6) == 0)
+                outbuf.data[j++] = '\n';
+              outbuf.data[j++] = ML666_B64[                            (data[i+0] >> 2)];
+              outbuf.data[j++] = ML666_B64[((data[i+0] & 0x03) << 4) | (data[i+1] >> 4)];
+              outbuf.data[j++] = ML666_B64[((data[i+1] & 0x0F) << 2) | (data[i+2] >> 6)];
+              outbuf.data[j++] = ML666_B64[  data[i+2] & 0x3F                          ];
+              i += 3;
+            }
+            len = buf.length - i;
+            if(len && len < 3 && j<outbuf.length-5){
+              if(i && i % (80/4*3-6) == 0)
+                outbuf.data[j++] = '\n';
+              switch(len){
+                case 1: {
+                  outbuf.data[j++] = ML666_B64[                            (data[i+0] >> 2)];
+                  outbuf.data[j++] = ML666_B64[((data[i+0] & 0x03) << 4)                   ];
+                  outbuf.data[j++] = '=';
+                  outbuf.data[j++] = '=';
+                  i += 1;
+                } break;
+                case 2: {
+                  outbuf.data[j++] = ML666_B64[                            (data[i+0] >> 2)];
+                  outbuf.data[j++] = ML666_B64[((data[i+0] & 0x03) << 4) | (data[i+1] >> 4)];
+                  outbuf.data[j++] = ML666_B64[((data[i+1] & 0x0F) << 2)                   ];
+                  outbuf.data[j++] = '=';
+                  i += 2;
+                } break;
+              }
+            }
           } break;
         }
       }
@@ -275,17 +307,39 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
           sts->state = SERIALIZER_W_NEXT_MEMBER;
         } break;
         case SERIALIZER_W_CONTENT_START: {
-          sts->data.data = "`\n";
-          sts->data.length = 2;
+          struct ml666_buffer_ro buf = ml666_st_content_get(sts->public.stb, ML666_ST_U_CONTENT(sts->cur)).ro;
+          sts->buffer_info = ml666_buffer__analyze(buf);
+          switch(sts->buffer_info.best_encoding){
+            case ML666_BIBE_ESCAPE: {
+              sts->data.data = "`\n";
+              if(sts->buffer_info.really_multi_line){
+                sts->data.length = 2;
+              }else{
+                sts->data.length = 1;
+              }
+            } break;
+            case ML666_BIBE_BASE64: {
+              sts->data.data = "b`\n";
+              sts->buffer_info.really_multi_line = buf.length > 80/4*3-6;
+              if(sts->buffer_info.really_multi_line){
+                sts->data.length = 3;
+              }else{
+                sts->data.length = 2;
+              }
+            } break;
+          }
           sts->spaces = sts->level * 2;
           sts->state = SERIALIZER_W_CONTENT;
         } break;
         case SERIALIZER_W_CONTENT: {
           // TODO: Consider base64 encoding if overhead is lower
           sts->esc_chars = "`\\";
-          sts->encoding = ENC_ESCAPED;
+          switch(sts->buffer_info.best_encoding){
+            case ML666_BIBE_ESCAPE: sts->encoding = ENC_ESCAPED; break;
+            case ML666_BIBE_BASE64: sts->encoding = ENC_BASE64; break;
+          }
           sts->data = ml666_st_content_get(sts->public.stb, ML666_ST_U_CONTENT(sts->cur)).ro;
-          sts->state = SERIALIZER_W_CONTENT_END_1;
+          sts->state = sts->buffer_info.really_multi_line ? SERIALIZER_W_CONTENT_END_1 : SERIALIZER_W_CONTENT_END_2;
         } break;
         case SERIALIZER_W_CONTENT_END_1: {
           sts->data.data = "\n";
@@ -296,21 +350,26 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
           // TODO: Check if content has any newlines, or if it should be on a single line
           sts->data.data = "`\n";
           sts->data.length = 2;
-          sts->spaces = sts->level * 2;
+          if(sts->buffer_info.really_multi_line)
+            sts->spaces = sts->level * 2;
           sts->state = SERIALIZER_W_NEXT_MEMBER;
         } break;
         case SERIALIZER_W_COMMENT_START: {
-          // TODO: Check if comment has any newlines, or if it should be on a single line
+          sts->buffer_info = ml666_buffer__analyze(ml666_st_comment_get(sts->public.stb, ML666_ST_U_COMMENT(sts->cur)).ro);
           sts->spaces = sts->level * 2;
-          sts->data.data = "/*\n";
           sts->data.length = 3;
+          if(sts->buffer_info.really_multi_line){
+            sts->data.data = "/*\n";
+          }else{
+            sts->data.data = "/* ";
+          }
           sts->state = SERIALIZER_W_COMMENT;
         } break;
         case SERIALIZER_W_COMMENT: {
           sts->esc_chars = "*\\";
           sts->encoding = ENC_ESCAPED;
           sts->data = ml666_st_comment_get(sts->public.stb, ML666_ST_U_COMMENT(sts->cur)).ro;
-          sts->state = SERIALIZER_W_COMMENT_END_1;
+          sts->state = sts->buffer_info.really_multi_line ? SERIALIZER_W_COMMENT_END_1 : SERIALIZER_W_COMMENT_END_2;
         } break;
         case SERIALIZER_W_COMMENT_END_1: {
           sts->data.data = "\n";
@@ -318,10 +377,15 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
           sts->state = SERIALIZER_W_COMMENT_END_2;
         } break;
         case SERIALIZER_W_COMMENT_END_2: {
-          sts->data.data = "*/\n";
-          sts->data.length = 3;
           sts->state = SERIALIZER_W_NEXT_MEMBER;
-          sts->spaces = sts->level * 2;
+          if(sts->buffer_info.really_multi_line){
+            sts->data.length = 3;
+            sts->data.data = "*/\n";
+            sts->spaces = sts->level * 2;
+          }else{
+            sts->data.length = 4;
+            sts->data.data = " */\n";
+          }
         } break;
       }
     }
