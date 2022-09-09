@@ -136,6 +136,10 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
             while(i<buf.length && j<outbuf.length-4){
               unsigned char ch = buf.data[i++];
               if(ch && strchr(sts->esc_chars, ch)){
+                switch(ch){
+                  case '\n': ch = 'n'; break;
+                  case '\t': ch = 't'; break;
+                }
                 outbuf.data[j++] = '\\';
                 outbuf.data[j++] = ch;
               }else switch(ch){
@@ -143,18 +147,16 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
                 case '\b'  : outbuf.data[j++] = '\\'; outbuf.data[j++] = 'b'; break;
                 case '\x1B': outbuf.data[j++] = '\\'; outbuf.data[j++] = 'e'; break;
                 case '\f'  : outbuf.data[j++] = '\\'; outbuf.data[j++] = 'f'; break;
-                case '\n'  : outbuf.data[j++] = '\\'; outbuf.data[j++] = 'n'; break;
-                case '\t'  : outbuf.data[j++] = '\\'; outbuf.data[j++] = 't'; break;
                 case '\v'  : outbuf.data[j++] = '\\'; outbuf.data[j++] = 'v'; break;
                 default: {
-                  if(ch >= ' ' || ch == '\t'){
+                  if(ch >= ' ' || ch == '\t' || ch == '\n'){
                     // TODO: Check for invalid utf8 sequences, and escape them
                     outbuf.data[j++] = ch;
                   }else{
                     outbuf.data[j++] = '\\';
                     outbuf.data[j++] = 'x';
-                    outbuf.data[j++] = '0' + (ch >> 4);
-                    outbuf.data[j++] = '0' + (ch & 0xF);
+                    outbuf.data[j++] = ML666_B36[ch >>  4];
+                    outbuf.data[j++] = ML666_B36[ch & 0xF];
                   }
                 } break;
               }
@@ -231,7 +233,7 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
           sts->state = SERIALIZER_W_TAG;
         } break;
         case SERIALIZER_W_TAG: {
-          sts->esc_chars = "/>= \\";
+          sts->esc_chars = "/> \\\n\t";
           sts->encoding = ENC_ESCAPED;
           sts->data = ml666_hashed_buffer_set__peek(ml666_st_element_get_name(sts->public.stb, ML666_ST_U_ELEMENT(sts->cur)))->buffer;
           sts->state = SERIALIZER_W_TAG_END;
@@ -262,7 +264,7 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
           sts->state = SERIALIZER_W_END_TAG;
         } break;
         case SERIALIZER_W_END_TAG: {
-          sts->esc_chars = "/>= \\";
+          sts->esc_chars = "/> \\\n\t";
           sts->encoding = ENC_ESCAPED;
           sts->data = ml666_hashed_buffer_set__peek(ml666_st_element_get_name(sts->public.stb, ML666_ST_U_ELEMENT(sts->cur)))->buffer;
           sts->state = SERIALIZER_W_END_TAG_END;

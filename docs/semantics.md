@@ -18,12 +18,15 @@ The content of the returned tokens should not contain any raw escape sequences, 
 them when it encounters them. A tokenizer may return a token in a streaming fashion, it may return them as chunks, or as
 a whole, this is left to the implementation.
 
-There are additional special semantics for string tokens & multiline comments,
+There are additional special semantics for string tokens & comments,
 the tokenizer shall apply the following additional transformations:
 
+* The string / comment delimiters  `` / /**/ / //  should not be included in the returned token content. But, the final newline of a single line
+  comment should be part of the token content.
+* If there is a space at the very beginning of a single line comment, it should be removed.
 * For `plain_string` and `multiline_comment`: If the first character is a newline, remove it. If the last line only contains `SP` " " characters,
-  and is precided but not followed by a newline, remove that line, including the preceding newline. The string / comment
-  delimiters  `` / /**/ / //  should not be included in the returned token content.
+  and is precided but not followed by a newline, remove that line, including the preceding newline.
+* For a `multiline_comment`, if the first or last character is a space, it should not be part of the token content.
 * For `hex_string` and `base64_string`: The parser should decode the content as hex or base64 correspondingly, and return the result as a token.
   The `base64_string` may also contain base64url encoded content, the decoding has to be relaxed to that end. Spaces can be anywhere and do not
   affect the en/decoding. Note that the ML666 syntax does not permit incomplete base64url or hex strings.

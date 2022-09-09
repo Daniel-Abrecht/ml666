@@ -18,7 +18,9 @@
   X(ML666__STATE_COMMENT_START) \
   X(ML666__STATE_COMMENT_FIRST_NEWLINE) \
   X(ML666__STATE_COMMENT) \
+  X(ML666__STATE_COMMENT_END_PRE) \
   X(ML666__STATE_COMMENT_END) \
+  X(ML666__STATE_COMMENT_LINE_START) \
   X(ML666__STATE_COMMENT_LINE) \
   X(ML666__STATE_SELF_CLOSE) \
   X(ML666__STATE_TAG_OR_END) \
@@ -389,6 +391,7 @@ bool ml666_tokenizer_next(struct ml666_tokenizer* _tokenizer){
       if(ch==' ' || ch=='\n')
         space = true;
       bool match = false;
+      bool include_final = false;
 
       if(!ecsp)
       switch(state){
@@ -398,7 +401,7 @@ bool ml666_tokenizer_next(struct ml666_tokenizer* _tokenizer){
           switch(ch){
             case '<': state = ML666__STATE_TAG_OR_END; break;
             case '`': {
-              state = ML666__STATE_TEXT;
+              state = ML666__STATE_TEXT_FIRST_NEWLINE;
               tokenizer->text_encoding = ML666__ENCODING_NONE;
             } break;
             case 'H': {
@@ -519,7 +522,7 @@ bool ml666_tokenizer_next(struct ml666_tokenizer* _tokenizer){
           if(ch == '*'){
             state = ML666__STATE_COMMENT_FIRST_NEWLINE;
           }else if(ch == '/'){
-            state = ML666__STATE_COMMENT_LINE;
+            state = ML666__STATE_COMMENT_LINE_START;
           }else{
             tokenizer->public.error = "syntax error: expected * or /";
             goto error;
@@ -527,15 +530,29 @@ bool ml666_tokenizer_next(struct ml666_tokenizer* _tokenizer){
         } break;
         case ML666__STATE_COMMENT_FIRST_NEWLINE: {
           state = ML666__STATE_COMMENT;
-          if(ch != '\n')
+          if(ch != '\n' && ch != ' ')
             continue;
         } break;
         case ML666__STATE_COMMENT: {
           if(ch == '*'){
             match = true;
             state = ML666__STATE_COMMENT_END;
+          }else if(ch == ' '){
+            if(length-index < 2)
+              break;
+            if(memory[offset+index+1] == '*'){
+              match = true;
+              state = ML666__STATE_COMMENT_END_PRE;
+            }
           }
         } break;
+        case ML666__STATE_COMMENT_END_PRE: {
+          if(ch != '*'){
+            tokenizer->public.error = "syntax error: expected *";
+            goto error;
+          }
+          state = ML666__STATE_COMMENT_END;
+        }; break;
         case ML666__STATE_COMMENT_END: {
           if(ch != '/'){
             tokenizer->public.error = "syntax error: expected /";
@@ -543,10 +560,16 @@ bool ml666_tokenizer_next(struct ml666_tokenizer* _tokenizer){
           }
           state = tokenizer->comment_next_state;
         }; break;
+        case ML666__STATE_COMMENT_LINE_START: {
+          state = ML666__STATE_COMMENT_LINE;
+          if(ch != ' ')
+            continue;
+        } break;
         case ML666__STATE_COMMENT_LINE: {
           if(ch == '\n'){
             match = true;
             state = tokenizer->comment_next_state;
+            include_final = true;
           }
         } break;
         case ML666__STATE_SELF_CLOSE: {
@@ -618,7 +641,7 @@ bool ml666_tokenizer_next(struct ml666_tokenizer* _tokenizer){
         if(index - cpo > spaces){
           tokenizer->public.match = (struct ml666_buffer_ro){
             .data = &memory_ro[offset],
-            .length = index - cpo - spaces,
+            .length = index - cpo - spaces + include_final,
           };
         }
         cpo = 0;
