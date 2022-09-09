@@ -94,6 +94,17 @@ bool ml666_buffer__append_p(struct ml666_buffer__append_args args){
   return true;
 }
 
+bool ml666_hashed_buffer__append_p(struct ml666_hashed_buffer__append_args args){
+  if(!args.data.length)
+    return true;
+  uint64_t hash = ml666_hash_FNV_1a_append(args.data, args.buffer->buffer.length ? args.buffer->hash : ML666_FNV_OFFSET_BASIS);
+  if(!ml666_buffer__append((struct ml666_buffer*)&args.buffer->buffer, args.data, args.that, args.realloc))
+    return false;
+  args.buffer->hash = hash;
+  return true;
+}
+
+
 void ml666_hashed_buffer_set__d__put(struct ml666_hashed_buffer_set* _buffer_set, const struct ml666_hashed_buffer_set_entry* _entry){
   struct ml666_hashed_buffer_set_default* buffer_set = (struct ml666_hashed_buffer_set_default*)_buffer_set;
   struct ml666_hashed_buffer_set_entry* entry = (struct ml666_hashed_buffer_set_entry*)_entry;
