@@ -78,6 +78,22 @@ bool ml666_hashed_buffer__clear_p(struct ml666_hashed_buffer__clear_args a){
   return true;
 }
 
+bool ml666_buffer__append_p(struct ml666_buffer__append_args args){
+  if(!args.data.length)
+    return true;
+  const size_t old_size = args.buffer->length;
+  const size_t new_size = old_size + args.data.length;
+  if(new_size < args.data.length)
+    return false;
+  char* content = args.realloc ? args.realloc(args.that, args.buffer->data, new_size) : realloc(args.buffer->data, new_size);
+  if(!content)
+    return false;
+  args.buffer->data = content;
+  memcpy(&content[old_size], args.data.data, args.data.length);
+  args.buffer->length = new_size;
+  return true;
+}
+
 void ml666_hashed_buffer_set__d__put(struct ml666_hashed_buffer_set* _buffer_set, const struct ml666_hashed_buffer_set_entry* _entry){
   struct ml666_hashed_buffer_set_default* buffer_set = (struct ml666_hashed_buffer_set_default*)_buffer_set;
   struct ml666_hashed_buffer_set_entry* entry = (struct ml666_hashed_buffer_set_entry*)_entry;

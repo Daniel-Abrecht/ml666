@@ -98,15 +98,10 @@ bool data_append(struct ml666_parser* parser, struct ml666_buffer_ro data){
     stp->current_content = content;
   }
   struct ml666_buffer buf = ml666_st_content_get(stp->public.stb, stp->current_content);
-  size_t length = buf.length + data.length;
-  char* newdata = stp->realloc(stp->public.user_ptr, buf.data, length);
-  if(!newdata){
+  if(!ml666_buffer__append(&buf, data, stp->public.user_ptr, stp->realloc)){
     parser->error = "simple_tree_parser::data_append: realloc failed\n";
     return false;
   }
-  memcpy(&newdata[buf.length], data.data, data.length);
-  buf.data = newdata;
-  buf.length = length;
   ml666_st_content_set(stp->public.stb, stp->current_content, buf);
   return true;
 }
@@ -134,15 +129,10 @@ bool comment_append(struct ml666_parser* parser, struct ml666_buffer_ro data){
     stp->current_comment = comment;
   }
   struct ml666_buffer buf = ml666_st_comment_get(stp->public.stb, stp->current_comment);
-  size_t length = buf.length + data.length;
-  char* newdata = stp->realloc(stp->public.user_ptr, buf.data, length);
-  if(!newdata){
+  if(!ml666_buffer__append(&buf, data, stp->public.user_ptr, stp->realloc)){
     parser->error = "simple_tree_parser::data_append: realloc failed\n";
     return false;
   }
-  memcpy(&newdata[buf.length], data.data, data.length);
-  buf.data = newdata;
-  buf.length = length;
   ml666_st_comment_set(stp->public.stb, stp->current_comment, buf);
   return true;
 }

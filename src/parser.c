@@ -57,34 +57,18 @@ static void ml666_parser_a_cleanup(struct ml666__parser_private* that){
   ml666_tokenizer_destroy(that->tokenizer);
 }
 
-static bool ml666_parser__buffer_append(struct ml666_buffer* buffer, struct ml666_buffer_ro data, void* that, ml666__cb__realloc* cb_realloc){
-  if(!data.length)
-    return true;
-  const size_t old_size = buffer->length;
-  const size_t new_size = old_size + data.length;
-  if(new_size < data.length)
-    return false;
-  char* content = cb_realloc(that, buffer->data, new_size);
-  if(!content)
-    return false;
-  buffer->data = content;
-  memcpy(&content[old_size], data.data, data.length);
-  buffer->length = new_size;
-  return true;
-}
-
 bool ml666_parser__d_mal__tag_name_append(struct ml666_parser* _that, ml666_opaque_tag_name* name, struct ml666_buffer_ro data){
   struct ml666__parser_private* that = (struct ml666__parser_private*)_that;
   if(!*name)
     *name = &that->default_hander_state.tag_name;
-  return ml666_parser__buffer_append(&(*name)->buffer, data, that->public.user_ptr, that->realloc);
+  return ml666_buffer__append(&(*name)->buffer, data, that->public.user_ptr, that->realloc);
 }
 
 bool ml666_parser__d_mal__attribute_name_append(struct ml666_parser* _that, ml666_opaque_attribute_name* name, struct ml666_buffer_ro data){
   struct ml666__parser_private* that = (struct ml666__parser_private*)_that;
   if(!*name)
     *name = &that->default_hander_state.attribute_name;
-  return ml666_parser__buffer_append(&(*name)->buffer, data, that->public.user_ptr, that->realloc);
+  return ml666_buffer__append(&(*name)->buffer, data, that->public.user_ptr, that->realloc);
 }
 
 void ml666_parser__d_mal__tag_name_free(struct ml666_parser* _that, ml666_opaque_tag_name name){

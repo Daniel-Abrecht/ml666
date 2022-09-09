@@ -78,6 +78,21 @@ typedef bool ml666_hashed_buffer__cb__clear_p(struct ml666_hashed_buffer__clear_
 #define ml666_hashed_buffer__clear(...) ml666_hashed_buffer__clear_p((struct ml666_hashed_buffer__clear_args){__VA_ARGS__})
 ml666_hashed_buffer__cb__clear_p ml666_hashed_buffer__clear_p;
 
+struct ml666_buffer__append_args {
+  struct ml666_buffer* buffer;
+  struct ml666_buffer_ro data;
+  void* that;
+  ml666__cb__realloc* realloc;
+};
+/**
+ * Append data to a buffer. Make sure the buffer content is actually allocated using malloc, as it tries to realloc it.
+ * The arguments can be passed by position or by name. The parameters .that and .realloc are optional.
+ * \see struct ml666_buffer__append_args
+ * \returns true on success, false on failure
+ */
+#define ml666_buffer__append(...) ml666_buffer__append_p((struct ml666_buffer__append_args){__VA_ARGS__})
+bool ml666_buffer__append_p(struct ml666_buffer__append_args args);
+
 ml666__cb__malloc  ml666__d__malloc;
 ml666__cb__realloc ml666__d__realloc;
 ml666__cb__free    ml666__d__free;
