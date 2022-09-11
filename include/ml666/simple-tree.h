@@ -106,6 +106,11 @@ struct ml666_st_builder {
     const struct ml666_st_member*: (const struct ml666_st_children*)ml666_st_node_get_children((STB), (void*)(X)) \
   )
 
+enum ml666_st_attribute_open_flags {
+  ML666_ST_AOF_CREATE           = (1<<0),
+  ML666_ST_AOF_CREATE_EXCLUSIVE = (1<<1) | ML666_ST_AOF_CREATE,
+  ML666_ST_AOF_CREATE_NOCOPY    = (2<<1) | ML666_ST_AOF_CREATE,
+};
 
 #define ML666_ST_CB(X, ...) \
   X(node_put, void, (struct ml666_st_builder* stb, struct ml666_st_node* node), __VA_ARGS__) \
@@ -132,8 +137,13 @@ struct ml666_st_builder {
   X(comment_set, bool, (struct ml666_st_builder* stb, struct ml666_st_comment* comment, struct ml666_buffer node), __VA_ARGS__) \
   X(comment_get, struct ml666_buffer, (struct ml666_st_builder* stb, const struct ml666_st_comment* comment), __VA_ARGS__) \
   \
+  X(attribute_open, struct ml666_st_attribute*, (struct ml666_st_builder* stb, struct ml666_st_element* element, const struct ml666_hashed_buffer* name, unsigned flags), __VA_ARGS__) \
+  X(attribute_remove, void, (struct ml666_st_builder* stb, struct ml666_st_attribute* attribute), __VA_ARGS__) \
+  X(attribute_set_value, bool, (struct ml666_st_builder* stb, struct ml666_st_attribute* attribute, struct ml666_buffer* value), __VA_ARGS__) \
+  X(attribute_get_value, const struct ml666_buffer*, (struct ml666_st_builder* stb, const struct ml666_st_attribute* attribute), __VA_ARGS__) \
+  \
   X(get_first_child, struct ml666_st_member*, (struct ml666_st_builder* stb, struct ml666_st_children* children), __VA_ARGS__) \
-  X(get_last_child, struct ml666_st_member*, (struct ml666_st_builder* stb, struct ml666_st_children* children), __VA_ARGS__) \
+  X(get_last_child, struct ml666_st_member*, (struct ml666_st_builder* stb, struct ml666_st_children* children), __VA_ARGS__)
 
 
 #define ML666__ST_DECLARATION_SUB(FUNC, _1, _2, PREFIX) ml666_st_cb_ ## FUNC PREFIX ## _ ## FUNC;
@@ -221,6 +231,19 @@ static inline bool ml666_st_comment_set(struct ml666_st_builder* stb, struct ml6
 }
 static inline struct ml666_buffer ml666_st_comment_get(struct ml666_st_builder* stb, const struct ml666_st_comment* comment){
   return stb->cb->comment_get(stb, comment);
+}
+
+static inline struct ml666_st_attribute* ml666_st_attribute_open(struct ml666_st_builder* stb, struct ml666_st_element* element, const struct ml666_hashed_buffer* name, unsigned flags){
+  return stb->cb->attribute_open(stb, element, name, flags);
+}
+static inline void ml666_st_attribute_remove(struct ml666_st_builder* stb, struct ml666_st_attribute* attribute){
+  stb->cb->attribute_remove(stb, attribute);
+}
+static inline bool ml666_st_attribute_set_value(struct ml666_st_builder* stb, struct ml666_st_attribute* attribute, struct ml666_buffer* value){
+  return stb->cb->attribute_set_value(stb, attribute, value);
+}
+static inline const struct ml666_buffer* ml666_st_attribute_get_value(struct ml666_st_builder* stb, const struct ml666_st_attribute* attribute){
+  return stb->cb->attribute_get_value(stb, attribute);
 }
 
 static inline struct ml666_st_member* ml666_st_get_first_child(struct ml666_st_builder* stb, struct ml666_st_children* children){

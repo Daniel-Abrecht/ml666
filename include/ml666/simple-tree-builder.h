@@ -2,6 +2,7 @@
 #define ML666_SIMPLE_TREE_BUILDER_H
 
 #include <ml666/simple-tree.h>
+#include <assert.h>
 
 // Default API
 ML666_ST_DECLARATION(ml666_default, ml666_st__d_)
@@ -21,11 +22,6 @@ void ml666_st_builder_destroy(struct ml666_st_builder*);
 // It is recommended to use the API functions in simple-tree.h instead, because
 // those will also work with other data structures & implementations.
 #define ML666_DEFAULT_SIMPLE_TREE \
-  struct ml666_st_attribute { \
-    const struct ml666_hashed_buffer_set_entry* name; \
-    struct ml666_buffer value; \
-  }; \
-  \
   struct ml666_st_children { \
     struct ml666_st_member *first, *last; \
   }; \
@@ -46,10 +42,35 @@ void ml666_st_builder_destroy(struct ml666_st_builder*);
     struct ml666_st_children children; \
   }; \
   \
+  struct ml666_st_attribute_set { \
+    struct ml666_st_attribute_set_entry* first; \
+    struct ml666_st_attribute_set_entry* last; \
+  }; \
+  struct ml666_st_attribute_set_entry { \
+    union { \
+      struct ml666_st_attribute_set* flist; \
+      struct ml666_st_attribute_set_entry* previous; \
+    }; \
+    union { \
+      struct ml666_st_attribute_set* llist; \
+      struct ml666_st_attribute_set_entry* next; \
+    }; \
+  }; \
+  static_assert(sizeof(struct ml666_st_attribute_set) == sizeof(struct ml666_st_attribute_set_entry), "Mismatch between ml666_st_attribute_set and ml666_st_attribute_set_entry"); \
+  static_assert(offsetof(struct ml666_st_attribute_set,first) == offsetof(struct ml666_st_attribute_set_entry,flist), "Mismatch between ml666_st_attribute_set and ml666_st_attribute_set_entry"); \
+  static_assert(offsetof(struct ml666_st_attribute_set,last ) == offsetof(struct ml666_st_attribute_set_entry,llist), "Mismatch between ml666_st_attribute_set and ml666_st_attribute_set_entry"); \
+  \
+  struct ml666_st_attribute { \
+    struct ml666_st_attribute_set_entry entry; \
+    const struct ml666_hashed_buffer_set_entry* name; \
+    struct ml666_buffer value; \
+  }; \
+  \
   struct ml666_st_element { \
     struct ml666_st_member member; \
     struct ml666_st_children children; \
     const struct ml666_hashed_buffer_set_entry* name; \
+    struct ml666_st_attribute_set attribute_list; \
   }; \
   \
   struct ml666_st_content { \

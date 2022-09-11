@@ -5,6 +5,9 @@
 #include <string.h>
 #include <stdio.h>
 
+#define ml666__container_of(ptr, type, member) \
+  ((type*)( (ptr) ? (char*)((__typeof__(((type*)0)->member)*){ptr}) - offsetof(type, member) : 0 ))
+
 ML666_DEFAULT_SIMPLE_TREE
 
 struct ml666_st_builder_default {
@@ -202,9 +205,9 @@ struct ml666_st_element* ml666_st__d__element_create(struct ml666_st_builder* _s
   memset(element, 0, sizeof(*element));
   element->member.node.type = ML666_ST_NT_ELEMENT;
   element->member.node.refcount = 1;
-  if(!(element->name = ml666_hashed_buffer_set__add(stb->a.buffer_set, entry, copy_name))){
+  if(!(element->name = ml666_hashed_buffer_set__lookup(stb->a.buffer_set, entry, copy_name ? ML666_HBS_M_ADD_COPY : ML666_HBS_M_ADD_TAKE))){
     ml666_st__d__node_put(&stb->public, &element->member.node);
-    fprintf(stderr, "ml666_hashed_buffer_set::add failed\n");
+    fprintf(stderr, "ml666_hashed_buffer_set::lookup failed\n");
     return 0;
   }
   return element;
@@ -244,6 +247,75 @@ struct ml666_st_member* ml666_st__d__get_first_child(struct ml666_st_builder* st
 struct ml666_st_member* ml666_st__d__get_last_child(struct ml666_st_builder* stb, struct ml666_st_children* children){
   (void)stb;
   return children->last;
+}
+
+struct ml666_st_attribute* ml666_st__d__attribute_open(struct ml666_st_builder* _stb, struct ml666_st_element* element, const struct ml666_hashed_buffer* name, unsigned flags){
+  struct ml666_st_builder_default* stb = (struct ml666_st_builder_default*)_stb;
+  enum ml666_hashed_buffer_set_mode mode = ML666_HBS_M_GET;
+  if((flags & ML666_ST_AOF_CREATE_NOCOPY) == ML666_ST_AOF_CREATE_NOCOPY){
+    mode = ML666_HBS_M_ADD_TAKE;
+  }else if((flags & ML666_ST_AOF_CREATE) == ML666_ST_AOF_CREATE){
+    mode = ML666_HBS_M_ADD_COPY;
+  }
+  const struct ml666_hashed_buffer_set_entry* entry = ml666_hashed_buffer_set__lookup(stb->a.buffer_set, name, mode);
+  if(!entry){
+    if(mode != ML666_HBS_M_GET)
+      fprintf(stderr, "ml666_hashed_buffer_set::lookup failed\n");
+    return 0;
+  }
+  struct ml666_st_attribute* attribute = 0;
+  if(element->attribute_list.first)
+  for(struct ml666_st_attribute_set_entry* it=element->attribute_list.first; it->llist != &element->attribute_list; it=it->next){
+    struct ml666_st_attribute* attr = ml666__container_of(it, struct ml666_st_attribute, entry);
+    if(attr->name != entry)
+      continue;
+    attribute = attr;
+    ml666_hashed_buffer_set__put(stb->a.buffer_set, entry);
+  }
+  if(attribute){
+    if((flags & ML666_ST_AOF_CREATE_EXCLUSIVE) == ML666_ST_AOF_CREATE_EXCLUSIVE){
+      fprintf(stderr, "ml666_st__d__attribute_open failed: attribute already exists\n");
+      return 0;
+    }
+  }else{
+    attribute = stb->a.malloc(stb->public.user_ptr, sizeof(*attribute));
+    if(!attribute){
+      ml666_hashed_buffer_set__put(stb->a.buffer_set, entry);
+      perror("malloc failed");
+      return 0;
+    }
+    memset(attribute, 0, sizeof(*attribute));
+    attribute->name = entry;
+    if(!element->attribute_list.first)
+      element->attribute_list.first = &attribute->entry;
+    if(element->attribute_list.last){
+      attribute->entry.previous = element->attribute_list.last;
+      element->attribute_list.last->next = &attribute->entry;
+    }else{
+      attribute->entry.flist = &element->attribute_list;
+    }
+    element->attribute_list.last = &attribute->entry;
+    attribute->entry.llist = &element->attribute_list;
+  }
+  return attribute;
+}
+
+void ml666_st__d__attribute_remove(struct ml666_st_builder* stb, struct ml666_st_attribute* attribute){
+  (void)stb;
+  (void)attribute;
+}
+
+bool ml666_st__d__attribute_set_value(struct ml666_st_builder* stb, struct ml666_st_attribute* attribute, struct ml666_buffer* value){
+  (void)stb;
+  (void)attribute;
+  (void)value;
+  return true;
+}
+
+const struct ml666_buffer* ml666_st__d__attribute_get_value(struct ml666_st_builder* stb, const struct ml666_st_attribute* attribute){
+  (void)stb;
+  (void)attribute;
+  return 0;
 }
 
 ML666_ST_IMPLEMENTATION(ml666_default, ml666_st__d_)

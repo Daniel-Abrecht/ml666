@@ -6,7 +6,7 @@
 
 #define BUCKET_COUNT 512
 
-static ml666_hashed_buffer_set__cb__add ml666_hashed_buffer_set__d__add;
+static ml666_hashed_buffer_set__cb__lookup ml666_hashed_buffer_set__d__lookup;
 static ml666_hashed_buffer_set__cb__put ml666_hashed_buffer_set__d__put;
 static ml666_hashed_buffer_set__cb__destroy ml666_hashed_buffer_set__d__destroy;
 
@@ -188,18 +188,25 @@ void ml666_hashed_buffer_set__d__put(struct ml666_hashed_buffer_set* _buffer_set
   abort();
 }
 
-const struct ml666_hashed_buffer_set_entry* ml666_hashed_buffer_set__d__add(struct ml666_hashed_buffer_set* _buffer_set, const struct ml666_hashed_buffer* entry, bool copy_content){
+const struct ml666_hashed_buffer_set_entry* ml666_hashed_buffer_set__d__lookup(
+  struct ml666_hashed_buffer_set* _buffer_set,
+  const struct ml666_hashed_buffer* entry,
+  enum ml666_hashed_buffer_set_mode mode
+){
   struct ml666_hashed_buffer_set_default* buffer_set = (struct ml666_hashed_buffer_set_default*)_buffer_set;
-  if(!buffer_set->entry_count++){
+  if(!buffer_set->entry_count){
+    if(mode == ML666_HBS_M_GET)
+      return 0;
     buffer_set->bucket = buffer_set->a.malloc(buffer_set->a.that, sizeof(*buffer_set->bucket));
     if(!buffer_set->bucket){
       perror("*malloc failed");
-      return false;
+      return 0;
     }
     memset(buffer_set->bucket, 0, sizeof(*buffer_set->bucket));
   }
+  buffer_set->entry_count += 1;
 
-  const struct ml666_hashed_buffer c = *entry;
+  struct ml666_hashed_buffer c = *entry;
   unsigned bucket = hash_to_bucket(c.hash);
 
   struct ml666_hashed_buffer_set_entry **it, *cur;
@@ -212,15 +219,22 @@ const struct ml666_hashed_buffer_set_entry* ml666_hashed_buffer_set__d__add(stru
     if( cur->data.hash == c.hash
      && cur->data.buffer.length == c.buffer.length
      && memcmp(cur->data.buffer.data, c.buffer.data, c.buffer.length) == 0
-    ) goto found;
+    ){
+      if(mode == ML666_HBS_M_ADD_TAKE)
+        ml666_hashed_buffer__clear(&c, buffer_set->a.that, buffer_set->a.free, buffer_set->a.clear_buffer);
+      goto found;
+    }
   }
+
+  if(mode == ML666_HBS_M_GET)
+    goto out;
 
   struct ml666_hashed_buffer_set_entry* result = buffer_set->a.malloc(buffer_set->a.that, sizeof(*result));
   if(!result){
     perror("*malloc failed");
-    return 0;
+    goto out;
   }
-  if(copy_content){
+  if(mode == ML666_HBS_M_ADD_COPY){
     if(!ml666_hashed_buffer__dup(
       .dest = &result->data, .src = c,
       .that = buffer_set->a.that,
@@ -228,8 +242,8 @@ const struct ml666_hashed_buffer_set_entry* ml666_hashed_buffer_set__d__add(stru
       .dup = buffer_set->a.dup_buffer
     )){
       buffer_set->a.free(buffer_set->a.that, result);
-      fprintf(stderr, "ml666_hashed_buffer_set__d__add: ml666_buffer__dup failed\n");
-      return 0;
+      fprintf(stderr, "ml666_hashed_buffer_set__d__lookup: ml666_buffer__dup failed\n");
+      goto out;
     }
     result->data.hash = c.hash;
   }else{
@@ -245,11 +259,14 @@ found:;
   if(!refcount)
     return false;
   cur->refcount = refcount;
+  if(0) out: cur=0;
+  if(!(buffer_set->entry_count -= 1))
+    buffer_set->a.free(buffer_set->a.that, buffer_set->bucket);
   return cur;
 }
 
 static const struct ml666_hashed_buffer_set_cb ml666_default_hashed_buffer_cb = {
-  .add = ml666_hashed_buffer_set__d__add,
+  .lookup = ml666_hashed_buffer_set__d__lookup,
   .put = ml666_hashed_buffer_set__d__put,
   .destroy = ml666_hashed_buffer_set__d__destroy,
 };

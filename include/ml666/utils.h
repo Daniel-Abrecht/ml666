@@ -135,10 +135,16 @@ struct ml666_buffer_info ml666_buffer__analyze(struct ml666_buffer_ro buffer);
 struct ml666_hashed_buffer_set;
 struct ml666_hashed_buffer_set_entry;
 
-typedef const struct ml666_hashed_buffer_set_entry* ml666_hashed_buffer_set__cb__add(
+enum ml666_hashed_buffer_set_mode {
+  ML666_HBS_M_GET,
+  ML666_HBS_M_ADD_TAKE,
+  ML666_HBS_M_ADD_COPY,
+};
+
+typedef const struct ml666_hashed_buffer_set_entry* ml666_hashed_buffer_set__cb__lookup(
   struct ml666_hashed_buffer_set* buffer_set,
   const struct ml666_hashed_buffer* entry,
-  bool copy_content
+  enum ml666_hashed_buffer_set_mode mode
 );
 typedef void ml666_hashed_buffer_set__cb__put(
   struct ml666_hashed_buffer_set* buffer_set,
@@ -149,7 +155,7 @@ typedef void ml666_hashed_buffer_set__cb__destroy(struct ml666_hashed_buffer_set
 
 
 struct ml666_hashed_buffer_set_cb {
-  ml666_hashed_buffer_set__cb__add* add;
+  ml666_hashed_buffer_set__cb__lookup* lookup;
   ml666_hashed_buffer_set__cb__put* put;
   ml666_hashed_buffer_set__cb__destroy* destroy;
 };
@@ -163,12 +169,12 @@ static inline const struct ml666_hashed_buffer* ml666_hashed_buffer_set__peek(co
   return (const struct ml666_hashed_buffer*)entry;
 }
 
-static inline const struct ml666_hashed_buffer_set_entry* ml666_hashed_buffer_set__add(
+static inline const struct ml666_hashed_buffer_set_entry* ml666_hashed_buffer_set__lookup(
   struct ml666_hashed_buffer_set* buffer_set,
   const struct ml666_hashed_buffer* buffer,
-  bool copy_content
+  enum ml666_hashed_buffer_set_mode mode
 ){
-  return buffer_set->cb->add(buffer_set, buffer, copy_content);
+  return buffer_set->cb->lookup(buffer_set, buffer, mode);
 }
 
 static inline void ml666_hashed_buffer_set__put(
