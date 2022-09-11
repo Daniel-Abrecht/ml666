@@ -211,6 +211,8 @@ bool ml666_simple_tree_parser_next(struct ml666_simple_tree_parser* _stp){
   if(!stp->parser)
     return false;
   bool res = ml666_parser_next(stp->parser);
+  stp->public.line = stp->parser->line;
+  stp->public.column = stp->parser->column;
   if(stp->parser->error)
     stp->public.error = stp->parser->error;
   return res;

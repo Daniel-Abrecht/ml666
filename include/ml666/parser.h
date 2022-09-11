@@ -10,6 +10,7 @@ struct ml666_parser {
   const struct ml666_parser_cb*const cb;
   void* user_ptr;
   const char* error;
+  size_t line, column;
   bool done;
 };
 

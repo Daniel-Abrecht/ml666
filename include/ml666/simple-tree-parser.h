@@ -7,6 +7,7 @@
 
 struct ml666_simple_tree_parser {
   struct ml666_st_builder*const stb;
+  size_t line, column;
   const char* error;
   void* user_ptr;
 };
@@ -37,7 +38,7 @@ static inline struct ml666_st_document* ml666_st_parse_p(struct ml666_simple_tre
   while(ml666_simple_tree_parser_next(stp));
   struct ml666_st_document* result = 0;
   if(stp->error){
-    fprintf(stderr, "ml666_parser_next failed: %s\n", stp->error);
+    fprintf(stderr, "ml666_parser_next failed: line %zu, column %zu: %s\n", stp->line, stp->column, stp->error);
   }else{
     result = ml666_simple_tree_parser_take_document(stp);
   }

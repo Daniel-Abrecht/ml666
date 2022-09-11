@@ -54,7 +54,8 @@ static void ml666_parser_a_done(struct ml666__parser_private* that){
 static void ml666_parser_a_cleanup(struct ml666__parser_private* that){
   if(that->public.cb->cleanup)
     that->public.cb->cleanup(&that->public);
-  ml666_tokenizer_destroy(that->tokenizer);
+  if(that->tokenizer)
+    ml666_tokenizer_destroy(that->tokenizer);
 }
 
 bool ml666_parser__d_mal__tag_name_append(struct ml666_parser* _that, ml666_opaque_tag_name* name, struct ml666_buffer_ro data){
@@ -217,10 +218,12 @@ error:
 
 bool ml666_parser_next(struct ml666_parser* _parser){
   struct ml666__parser_private*restrict parser = (struct ml666__parser_private*)_parser;
-  if(parser->tokenizer->token == ML666_EOF)
+  if(!parser->tokenizer || parser->tokenizer->token == ML666_EOF)
     return false;
   struct ml666_tokenizer* tokenizer = parser->tokenizer;
   bool done = !ml666_tokenizer_next(tokenizer);
+  parser->public.line = tokenizer->line;
+  parser->public.column = tokenizer->column;
   parser->public.error = tokenizer->error;
   if(tokenizer->match.length)
     parser->nonempty_token = true;

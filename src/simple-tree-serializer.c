@@ -110,7 +110,7 @@ struct ml666_st_serializer* ml666_st_serializer_create_p(struct ml666_st_seriali
 
 bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
   struct ml666_st_serializer_private*restrict sts = (struct ml666_st_serializer_private*)_sts;
-  while(sts->state != SERIALIZER_W_DONE){
+  while(sts->state != SERIALIZER_W_DONE || sts->data.length || sts->outptr.length){
     if(sts->data.length || sts->outptr.length){
       struct ml666_buffer_ro buf = sts->data;
       struct ml666_buffer outbuf = sts->outbuf;
@@ -134,8 +134,28 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
             j += l;
           } break;
           case ENC_ESCAPED: {
-            while(i<buf.length && j<outbuf.length-4){
-              unsigned char ch = buf.data[i++];
+            while(i<buf.length && j<outbuf.length-6){
+              unsigned char ch = buf.data[i];
+              if(ch >= 0x80){
+                // Check utf-8, escape if not valid utf-8
+                struct streaming_utf8_validator v = {0};
+                unsigned length = 2 + (ch >= 0xE0) + (ch >= 0xF0) + (ch >= 0xF8) + (ch >= 0xFC);
+                size_t n = i+length < buf.length ? i+length : buf.length;
+                for(unsigned k=i; k<n; k++){
+                  if(!utf8_validate(&v,buf.data[k])){
+                    i += 1;
+                    goto outhex;
+                  }
+                }
+                if(!utf8_validate(&v,EOF)){
+                  i += 1;
+                  goto outhex;
+                }
+                while(i<n)
+                  outbuf.data[j++] = buf.data[i++];
+                continue;
+              }
+              i += 1;
               if(ch && strchr(sts->esc_chars, ch)){
                 switch(ch){
                   case '\n': ch = 'n'; break;
@@ -151,15 +171,15 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
                 case '\v'  : outbuf.data[j++] = '\\'; outbuf.data[j++] = 'v'; break;
                 default: {
                   if(ch >= ' ' || ch == '\t' || ch == '\n'){
-                    // TODO: Check for invalid utf8 sequences, and escape them
                     outbuf.data[j++] = ch;
-                  }else{
-                    outbuf.data[j++] = '\\';
-                    outbuf.data[j++] = 'x';
-                    outbuf.data[j++] = ML666_B36[ch >>  4];
-                    outbuf.data[j++] = ML666_B36[ch & 0xF];
-                  }
+                  }else goto outhex;
                 } break;
+              }
+              if(0) outhex:{
+                outbuf.data[j++] = '\\';
+                outbuf.data[j++] = 'x';
+                outbuf.data[j++] = ML666_B36[ch >>  4];
+                outbuf.data[j++] = ML666_B36[ch & 0xF];
               }
             }
           } break;
@@ -319,7 +339,7 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
               }
             } break;
             case ML666_BIBE_BASE64: {
-              sts->data.data = "b`\n";
+              sts->data.data = "B`\n";
               sts->buffer_info.really_multi_line = buf.length > 80/4*3-6;
               if(sts->buffer_info.really_multi_line){
                 sts->data.length = 3;
