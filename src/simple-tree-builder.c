@@ -249,7 +249,19 @@ struct ml666_st_member* ml666_st__d__get_last_child(struct ml666_st_builder* stb
   return children->last;
 }
 
-struct ml666_st_attribute* ml666_st__d__attribute_open(struct ml666_st_builder* _stb, struct ml666_st_element* element, const struct ml666_hashed_buffer* name, unsigned flags){
+struct ml666_st_attribute* ml666_st__d__attribute_get_first(const struct ml666_st_builder* stb, const struct ml666_st_element* element){
+  (void)stb;
+  return ml666__container_of(element->attribute_list.first, struct ml666_st_attribute, entry);
+}
+
+struct ml666_st_attribute* ml666_st__d__attribute_get_next(const struct ml666_st_builder* stb, const struct ml666_st_attribute* attribute){
+  (void)stb;
+  if(attribute->entry.llist->last == &attribute->entry)
+    return 0;
+  return ml666__container_of(attribute->entry.next, struct ml666_st_attribute, entry);
+}
+
+struct ml666_st_attribute* ml666_st__d__attribute_lookup(struct ml666_st_builder* _stb, struct ml666_st_element* element, const struct ml666_hashed_buffer* name, unsigned flags){
   struct ml666_st_builder_default* stb = (struct ml666_st_builder_default*)_stb;
   enum ml666_hashed_buffer_set_mode mode = ML666_HBS_M_GET;
   if((flags & ML666_ST_AOF_CREATE_NOCOPY) == ML666_ST_AOF_CREATE_NOCOPY){
@@ -264,15 +276,11 @@ struct ml666_st_attribute* ml666_st__d__attribute_open(struct ml666_st_builder* 
     return 0;
   }
   struct ml666_st_attribute* attribute = 0;
-  if(element->attribute_list.first)
-  for(struct ml666_st_attribute_set_entry* it=element->attribute_list.first; it->llist != &element->attribute_list; it=it->next){
-    struct ml666_st_attribute* attr = ml666__container_of(it, struct ml666_st_attribute, entry);
-    if(attr->name != entry)
-      continue;
-    attribute = attr;
-    ml666_hashed_buffer_set__put(stb->a.buffer_set, entry);
-  }
+  for(attribute=ml666_st_attribute_get_first(&stb->public, element); attribute; attribute=ml666_st_attribute_get_next(&stb->public, attribute))
+    if(attribute->name == entry)
+      break;
   if(attribute){
+    ml666_hashed_buffer_set__put(stb->a.buffer_set, entry);
     if((flags & ML666_ST_AOF_CREATE_EXCLUSIVE) == ML666_ST_AOF_CREATE_EXCLUSIVE){
       fprintf(stderr, "ml666_st__d__attribute_open failed: attribute already exists\n");
       return 0;
@@ -305,17 +313,34 @@ void ml666_st__d__attribute_remove(struct ml666_st_builder* stb, struct ml666_st
   (void)attribute;
 }
 
-bool ml666_st__d__attribute_set_value(struct ml666_st_builder* stb, struct ml666_st_attribute* attribute, struct ml666_buffer* value){
+const struct ml666_hashed_buffer* ml666_st__d__attribute_get_name(struct ml666_st_builder* stb, const struct ml666_st_attribute* attribute){
   (void)stb;
-  (void)attribute;
-  (void)value;
+  return ml666_hashed_buffer_set__peek(attribute->name);
+}
+
+bool ml666_st__d__attribute_set_value(struct ml666_st_builder* _stb, struct ml666_st_attribute* attribute, struct ml666_buffer* value){
+  struct ml666_st_builder_default* stb = (struct ml666_st_builder_default*)_stb;
+  if(attribute->has_value)
+    ml666_buffer__clear(&attribute->value, stb->public.user_ptr, stb->a.free);
+  if(value)
+    attribute->value = *value;
+  attribute->has_value = !!value;
   return true;
 }
 
-const struct ml666_buffer* ml666_st__d__attribute_get_value(struct ml666_st_builder* stb, const struct ml666_st_attribute* attribute){
+const struct ml666_buffer_ro* ml666_st__d__attribute_get_value(struct ml666_st_builder* stb, const struct ml666_st_attribute* attribute){
   (void)stb;
-  (void)attribute;
-  return 0;
+  if(!attribute->has_value)
+    return 0;
+  return &attribute->value.ro;
+}
+
+const struct ml666_buffer* ml666_st__d__attribute_take_value(struct ml666_st_builder* stb, struct ml666_st_attribute* attribute){
+  (void)stb;
+  if(!attribute->has_value)
+    return 0;
+  attribute->has_value = false;
+  return &attribute->value;
 }
 
 ML666_ST_IMPLEMENTATION(ml666_default, ml666_st__d_)

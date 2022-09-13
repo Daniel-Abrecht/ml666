@@ -14,8 +14,7 @@
   X(SERIALIZER_W_TAG) \
   X(SERIALIZER_W_ATTRIBUTE) \
   X(SERIALIZER_W_ATTRIBUTE_VALUE_START) \
-  X(SERIALIZER_W_ATTRIBUTE_VALUE) \
-  X(SERIALIZER_W_ATTRIBUTE_VALUE_END) \
+  X(SERIALIZER_W_ATTRIBUTE_NEXT) \
   X(SERIALIZER_W_TAG_END) \
   X(SERIALIZER_W_END_TAG_START) \
   X(SERIALIZER_W_END_TAG) \
@@ -55,6 +54,7 @@ struct ml666_st_serializer_private {
   struct ml666_buffer_info buffer_info;
 
   struct ml666_st_node* cur;
+  struct ml666_st_attribute* current_attribute;
   enum serializer_state state;
 
   enum data_encoding encoding;
@@ -287,16 +287,37 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
         case SERIALIZER_W_TAG: {
           sts->esc_chars = "/> \\\n\t";
           sts->encoding = ENC_ESCAPED;
-          sts->data = ml666_hashed_buffer_set__peek(ml666_st_element_get_name(sts->public.stb, ML666_ST_U_ELEMENT(sts->cur)))->buffer;
-          sts->state = SERIALIZER_W_TAG_END;
+          struct ml666_st_element* element = ML666_ST_U_ELEMENT(sts->cur);
+          sts->data = ml666_hashed_buffer_set__peek(ml666_st_element_get_name(sts->public.stb, element))->buffer;
+          if((sts->current_attribute = ml666_st_attribute_get_first(sts->public.stb, element))){
+            sts->state = SERIALIZER_W_ATTRIBUTE;
+          }else{
+            sts->state = SERIALIZER_W_TAG_END;
+          }
+          //
         } break;
         case SERIALIZER_W_ATTRIBUTE: {
+          sts->spaces = 1;
+          sts->encoding = ENC_ESCAPED;
+          sts->esc_chars = "=/> \\\n\t";
+          sts->data = ml666_st_attribute_get_name(sts->public.stb, sts->current_attribute)->buffer;
+          if(ml666_st_attribute_get_value(sts->public.stb, sts->current_attribute)){
+            sts->state = SERIALIZER_W_ATTRIBUTE_VALUE_START;
+          }else{
+            sts->state = SERIALIZER_W_ATTRIBUTE_NEXT;
+          }
         } break;
-        case SERIALIZER_W_ATTRIBUTE_VALUE_START: {
+        case SERIALIZER_W_ATTRIBUTE_VALUE_START: { // TODO: This should
+          sts->data.data = "=";
+          sts->data.length = 1;
+          sts->state = SERIALIZER_W_CONTENT_START;
         } break;
-        case SERIALIZER_W_ATTRIBUTE_VALUE: {
-        } break;
-        case SERIALIZER_W_ATTRIBUTE_VALUE_END: {
+        case SERIALIZER_W_ATTRIBUTE_NEXT: {
+          if((sts->current_attribute = ml666_st_attribute_get_next(sts->public.stb, sts->current_attribute))){
+            sts->state = SERIALIZER_W_ATTRIBUTE;
+          }else{
+            sts->state = SERIALIZER_W_TAG_END;
+          }
         } break;
         case SERIALIZER_W_TAG_END: {
           if(ml666_st_get_first_child(sts->public.stb, ML666_ST_U_CHILDREN(sts->public.stb, sts->cur))){
@@ -327,7 +348,13 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
           sts->state = SERIALIZER_W_NEXT_MEMBER;
         } break;
         case SERIALIZER_W_CONTENT_START: {
-          struct ml666_buffer_ro buf = ml666_st_content_get(sts->public.stb, ML666_ST_U_CONTENT(sts->cur)).ro;
+          struct ml666_buffer_ro buf;
+          if(sts->current_attribute){
+            buf = *ml666_st_attribute_get_value(sts->public.stb, sts->current_attribute);
+          }else{
+            buf = ml666_st_content_get(sts->public.stb, ML666_ST_U_CONTENT(sts->cur)).ro;
+            sts->spaces = sts->level * 2;
+          }
           sts->buffer_info = ml666_buffer__analyze(buf);
           switch(sts->buffer_info.best_encoding){
             case ML666_BIBE_ESCAPE: {
@@ -348,7 +375,6 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
               }
             } break;
           }
-          sts->spaces = sts->level * 2;
           sts->state = SERIALIZER_W_CONTENT;
         } break;
         case SERIALIZER_W_CONTENT: {
@@ -358,7 +384,11 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
             case ML666_BIBE_ESCAPE: sts->encoding = ENC_ESCAPED; break;
             case ML666_BIBE_BASE64: sts->encoding = ENC_BASE64; break;
           }
-          sts->data = ml666_st_content_get(sts->public.stb, ML666_ST_U_CONTENT(sts->cur)).ro;
+          if(sts->current_attribute){
+            sts->data = *ml666_st_attribute_get_value(sts->public.stb, sts->current_attribute);
+          }else{
+            sts->data = ml666_st_content_get(sts->public.stb, ML666_ST_U_CONTENT(sts->cur)).ro;
+          }
           sts->state = sts->buffer_info.really_multi_line ? SERIALIZER_W_CONTENT_END_1 : SERIALIZER_W_CONTENT_END_2;
         } break;
         case SERIALIZER_W_CONTENT_END_1: {
@@ -367,12 +397,16 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
           sts->state = SERIALIZER_W_CONTENT_END_2;
         } break;
         case SERIALIZER_W_CONTENT_END_2: {
-          // TODO: Check if content has any newlines, or if it should be on a single line
           sts->data.data = "`\n";
-          sts->data.length = 2;
           if(sts->buffer_info.really_multi_line)
             sts->spaces = sts->level * 2;
-          sts->state = SERIALIZER_W_NEXT_MEMBER;
+          if(sts->current_attribute){
+            sts->state = SERIALIZER_W_ATTRIBUTE_NEXT;
+            sts->data.length = 1;
+          }else{
+            sts->state = SERIALIZER_W_NEXT_MEMBER;
+            sts->data.length = 2;
+          }
         } break;
         case SERIALIZER_W_COMMENT_START: {
           sts->buffer_info = ml666_buffer__analyze(ml666_st_comment_get(sts->public.stb, ML666_ST_U_COMMENT(sts->cur)).ro);

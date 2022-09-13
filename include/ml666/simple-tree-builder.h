@@ -64,6 +64,7 @@ void ml666_st_builder_destroy(struct ml666_st_builder*);
     struct ml666_st_attribute_set_entry entry; \
     const struct ml666_hashed_buffer_set_entry* name; \
     struct ml666_buffer value; \
+    bool has_value; \
   }; \
   \
   struct ml666_st_element { \

@@ -75,6 +75,9 @@ static bool tag_pop(struct ml666_parser* parser){
   struct ml666_st_node* parent = ml666_st_member_get_parent(stp->public.stb, ML666_ST_MEMBER(element));
   if(!parent)
     return false;
+  stp->current_content = 0;
+  stp->current_comment = 0;
+  stp->current_attribute = 0;
   return ml666_st_node_ref_set(stp->public.stb, &stp->cur, parent);
 }
 
@@ -150,9 +153,28 @@ static bool set_attribute(struct ml666_parser* parser, ml666_opaque_attribute_na
   struct ml666_hashed_buffer entry;
   ml666_hashed_buffer__set(&entry, (*name)->buffer.ro);
   bool copy_name = true; // Note: "false" only works if the allocator actually used malloc. Any other case will fail. "true" always works, but is more expencive.
-  struct ml666_st_attribute* attribute = ml666_st_attribute_open(stp->public.stb, element, &entry, ML666_ST_AOF_CREATE_EXCLUSIVE | (copy_name?0:ML666_ST_AOF_CREATE_NOCOPY));
+  struct ml666_st_attribute* attribute = ml666_st_attribute_lookup(stp->public.stb, element, &entry, ML666_ST_AOF_CREATE_EXCLUSIVE | (copy_name?0:ML666_ST_AOF_CREATE_NOCOPY));
+  stp->current_attribute = attribute;
   return !!attribute;
 }
+
+bool value_append(struct ml666_parser* parser, struct ml666_buffer_ro data){
+  struct ml666_simple_tree_parser_default* stp = parser->user_ptr;
+  if(!stp->cur || !stp->current_attribute){
+    parser->error = "simple_tree_parser::data_append: invalid parser state\n";
+    return false;
+  }
+  const struct ml666_buffer* pvalue = ml666_st_attribute_take_value(stp->public.stb, stp->current_attribute);
+  struct ml666_buffer buf = {0};
+  if(pvalue)
+    buf = *pvalue;
+  if(!ml666_buffer__append(&buf, data, stp->public.user_ptr, stp->realloc)){
+    parser->error = "simple_tree_parser::data_append: realloc failed\n";
+    return false;
+  }
+  return ml666_st_attribute_set_value(stp->public.stb, stp->current_attribute, &buf);
+}
+
 
 static const struct ml666_parser_cb callbacks = {
   .tag_name_append       = ml666_parser__d_mal__tag_name_append,
@@ -164,6 +186,7 @@ static const struct ml666_parser_cb callbacks = {
 
   .data_append = data_append,
   .comment_append = comment_append,
+  .value_append = value_append,
 
   .tag_push = tag_push,
   .end_tag_check = end_tag_check,
