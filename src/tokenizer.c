@@ -31,6 +31,7 @@
   X(ML666__STATE_ATTRIBUTE_START) \
   X(ML666__STATE_ATTRIBUTE_VALUE) \
   X(ML666__STATE_ATTRIBUTE_VALUE_TEXT) \
+  X(ML666__STATE_ATTRIBUTE_VALUE_FIRST_NEWLINE) \
   X(ML666__STATE_ATTRIBUTE_VALUE_TEXT_EXPECT_QUOTE) \
   X(ML666__STATE_EXPECT_LT)
 enum ml666__state {
@@ -479,7 +480,7 @@ bool ml666_tokenizer_next(struct ml666_tokenizer* _tokenizer){
         } break;
         case ML666__STATE_ATTRIBUTE_VALUE: {
           if(ch == '`'){
-            state = ML666__STATE_ATTRIBUTE_VALUE_TEXT;
+            state = ML666__STATE_ATTRIBUTE_VALUE_FIRST_NEWLINE;
             tokenizer->text_encoding = ML666__ENCODING_NONE;
           }else if(ch == 'H'){
             state = ML666__STATE_ATTRIBUTE_VALUE_TEXT_EXPECT_QUOTE;
@@ -500,6 +501,11 @@ bool ml666_tokenizer_next(struct ml666_tokenizer* _tokenizer){
           tokenizer->decode_akku = 0;
           tokenizer->decode_index = 0;
           state = ML666__STATE_ATTRIBUTE_VALUE_TEXT;
+        } break;
+        case ML666__STATE_ATTRIBUTE_VALUE_FIRST_NEWLINE: {
+          state = ML666__STATE_ATTRIBUTE_VALUE_TEXT;
+          if(ch != '\n')
+            continue;
         } break;
         case ML666__STATE_ATTRIBUTE_VALUE_TEXT: {
           if(ch == '`'){
