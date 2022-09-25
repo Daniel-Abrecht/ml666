@@ -24,6 +24,8 @@ void ml666_st__d__node_put(struct ml666_st_builder* _stb, struct ml666_st_node* 
     case ML666_ST_NT_ELEMENT: {
       struct ml666_st_element* element = (struct ml666_st_element*)node;
       ml666_hashed_buffer_set__put(stb->a.buffer_set, element->name);
+      for(struct ml666_st_attribute* attribute; (attribute=ml666_st_attribute_get_first(&stb->public, element));)
+        ml666_st_attribute_remove(&stb->public, attribute);
     } break;
     case ML666_ST_NT_CONTENT: {
       struct ml666_st_content* content = (struct ml666_st_content*)node;
@@ -308,9 +310,23 @@ struct ml666_st_attribute* ml666_st__d__attribute_lookup(struct ml666_st_builder
   return attribute;
 }
 
-void ml666_st__d__attribute_remove(struct ml666_st_builder* stb, struct ml666_st_attribute* attribute){
-  (void)stb;
-  (void)attribute;
+void ml666_st__d__attribute_remove(struct ml666_st_builder* _stb, struct ml666_st_attribute* attribute){
+  struct ml666_st_builder_default* stb = (struct ml666_st_builder_default*)_stb;
+  if(attribute->entry.llist->last == &attribute->entry && attribute->entry.flist->first == &attribute->entry){
+    attribute->entry.llist->last  = 0;
+    attribute->entry.llist->first = 0;
+  }else if(attribute->entry.flist->first == &attribute->entry){
+    attribute->entry.next->flist = attribute->entry.flist;
+    attribute->entry.flist->first = attribute->entry.next;
+  }else if(attribute->entry.llist->last == &attribute->entry){
+    attribute->entry.previous->llist = attribute->entry.llist;
+    attribute->entry.llist->last = attribute->entry.previous;
+  }else{
+    attribute->entry.previous->next = attribute->entry.next;
+    attribute->entry.next->previous = attribute->entry.previous;
+  }
+  ml666_st_attribute_set_value(&stb->public, attribute, 0);
+  stb->a.free(stb->public.user_ptr, attribute);
 }
 
 const struct ml666_hashed_buffer* ml666_st__d__attribute_get_name(struct ml666_st_builder* stb, const struct ml666_st_attribute* attribute){
