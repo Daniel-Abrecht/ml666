@@ -103,7 +103,7 @@ bool data_append(struct ml666_parser* parser, struct ml666_buffer_ro data){
     ml666_st_node_put(stp->public.stb, ML666_ST_NODE(content));
     stp->current_content = content;
   }
-  struct ml666_buffer buf = ml666_st_content_get(stp->public.stb, stp->current_content);
+  struct ml666_buffer buf = ml666_st_content_take(stp->public.stb, stp->current_content);
   if(!ml666_buffer__append(&buf, data, stp->public.user_ptr, stp->realloc)){
     parser->error = "simple_tree_parser::data_append: realloc failed\n";
     return false;
@@ -134,7 +134,7 @@ bool comment_append(struct ml666_parser* parser, struct ml666_buffer_ro data){
     ml666_st_node_put(stp->public.stb, ML666_ST_NODE(comment));
     stp->current_comment = comment;
   }
-  struct ml666_buffer buf = ml666_st_comment_get(stp->public.stb, stp->current_comment);
+  struct ml666_buffer buf = ml666_st_comment_take(stp->public.stb, stp->current_comment);
   if(!ml666_buffer__append(&buf, data, stp->public.user_ptr, stp->realloc)){
     parser->error = "simple_tree_parser::data_append: realloc failed\n";
     return false;

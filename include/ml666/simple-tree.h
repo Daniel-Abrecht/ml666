@@ -133,9 +133,11 @@ enum ml666_st_attribute_open_flags {
   X(element_get_name, const struct ml666_hashed_buffer_set_entry*, (struct ml666_st_builder* stb, struct ml666_st_element* node), __VA_ARGS__) \
   \
   X(content_set, bool, (struct ml666_st_builder* stb, struct ml666_st_content* content, struct ml666_buffer node), __VA_ARGS__) \
-  X(content_get, struct ml666_buffer, (struct ml666_st_builder* stb, const struct ml666_st_content* content), __VA_ARGS__) \
+  X(content_get, struct ml666_buffer_ro, (struct ml666_st_builder* stb, const struct ml666_st_content* content), __VA_ARGS__) \
+  X(content_take, struct ml666_buffer, (struct ml666_st_builder* stb, struct ml666_st_content* content), __VA_ARGS__) \
   X(comment_set, bool, (struct ml666_st_builder* stb, struct ml666_st_comment* comment, struct ml666_buffer node), __VA_ARGS__) \
-  X(comment_get, struct ml666_buffer, (struct ml666_st_builder* stb, const struct ml666_st_comment* comment), __VA_ARGS__) \
+  X(comment_get, struct ml666_buffer_ro, (struct ml666_st_builder* stb, const struct ml666_st_comment* comment), __VA_ARGS__) \
+  X(comment_take, struct ml666_buffer, (struct ml666_st_builder* stb, struct ml666_st_comment* comment), __VA_ARGS__) \
   \
   X(attribute_get_first, struct ml666_st_attribute*, (const struct ml666_st_builder* stb, const struct ml666_st_element* element), __VA_ARGS__) \
   X(attribute_get_next, struct ml666_st_attribute*, (const struct ml666_st_builder* stb, const struct ml666_st_attribute* attribute), __VA_ARGS__) \
@@ -227,14 +229,20 @@ static inline const struct ml666_hashed_buffer_set_entry* ml666_st_element_get_n
 static inline bool ml666_st_content_set(struct ml666_st_builder* stb, struct ml666_st_content* content, struct ml666_buffer node){
   return stb->cb->content_set(stb, content, node);
 }
-static inline struct ml666_buffer ml666_st_content_get(struct ml666_st_builder* stb, const struct ml666_st_content* content){
+static inline struct ml666_buffer_ro ml666_st_content_get(struct ml666_st_builder* stb, const struct ml666_st_content* content){
   return stb->cb->content_get(stb, content);
+}
+static inline struct ml666_buffer ml666_st_content_take(struct ml666_st_builder* stb, struct ml666_st_content* content){
+  return stb->cb->content_take(stb, content);
 }
 static inline bool ml666_st_comment_set(struct ml666_st_builder* stb, struct ml666_st_comment* comment, struct ml666_buffer node){
   return stb->cb->comment_set(stb, comment, node);
 }
-static inline struct ml666_buffer ml666_st_comment_get(struct ml666_st_builder* stb, const struct ml666_st_comment* comment){
+static inline struct ml666_buffer_ro ml666_st_comment_get(struct ml666_st_builder* stb, const struct ml666_st_comment* comment){
   return stb->cb->comment_get(stb, comment);
+}
+static inline struct ml666_buffer ml666_st_comment_take(struct ml666_st_builder* stb, struct ml666_st_comment* comment){
+  return stb->cb->comment_take(stb, comment);
 }
 
 static inline struct ml666_st_attribute* ml666_st_attribute_get_first(const struct ml666_st_builder* stb, const struct ml666_st_element* element){

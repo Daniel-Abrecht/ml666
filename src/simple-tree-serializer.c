@@ -352,7 +352,7 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
           if(sts->current_attribute){
             buf = *ml666_st_attribute_get_value(sts->public.stb, sts->current_attribute);
           }else{
-            buf = ml666_st_content_get(sts->public.stb, ML666_ST_U_CONTENT(sts->cur)).ro;
+            buf = ml666_st_content_get(sts->public.stb, ML666_ST_U_CONTENT(sts->cur));
             sts->spaces = sts->level * 2;
           }
           sts->buffer_info = ml666_buffer__analyze(buf);
@@ -387,7 +387,7 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
           if(sts->current_attribute){
             sts->data = *ml666_st_attribute_get_value(sts->public.stb, sts->current_attribute);
           }else{
-            sts->data = ml666_st_content_get(sts->public.stb, ML666_ST_U_CONTENT(sts->cur)).ro;
+            sts->data = ml666_st_content_get(sts->public.stb, ML666_ST_U_CONTENT(sts->cur));
           }
           sts->state = sts->buffer_info.really_multi_line ? SERIALIZER_W_CONTENT_END_1 : SERIALIZER_W_CONTENT_END_2;
         } break;
@@ -409,7 +409,7 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
           }
         } break;
         case SERIALIZER_W_COMMENT_START: {
-          sts->buffer_info = ml666_buffer__analyze(ml666_st_comment_get(sts->public.stb, ML666_ST_U_COMMENT(sts->cur)).ro);
+          sts->buffer_info = ml666_buffer__analyze(ml666_st_comment_get(sts->public.stb, ML666_ST_U_COMMENT(sts->cur)));
           sts->spaces = sts->level * 2;
           sts->data.length = 3;
           if(sts->buffer_info.really_multi_line){
@@ -422,7 +422,7 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
         case SERIALIZER_W_COMMENT: {
           sts->esc_chars = "*\\";
           sts->encoding = ENC_ESCAPED;
-          sts->data = ml666_st_comment_get(sts->public.stb, ML666_ST_U_COMMENT(sts->cur)).ro;
+          sts->data = ml666_st_comment_get(sts->public.stb, ML666_ST_U_COMMENT(sts->cur));
           sts->state = sts->buffer_info.really_multi_line ? SERIALIZER_W_COMMENT_END_1 : SERIALIZER_W_COMMENT_END_2;
         } break;
         case SERIALIZER_W_COMMENT_END_1: {

@@ -81,26 +81,42 @@ const struct ml666_hashed_buffer_set_entry* ml666_st__d__element_get_name(struct
   return element->name;
 }
 
-bool ml666_st__d__content_set(struct ml666_st_builder* stb, struct ml666_st_content* content, struct ml666_buffer buffer){
-  (void)stb;
+bool ml666_st__d__content_set(struct ml666_st_builder* _stb, struct ml666_st_content* content, struct ml666_buffer buffer){
+  struct ml666_st_builder_default* stb = (struct ml666_st_builder_default*)_stb;
+  ml666_buffer__clear(&content->buffer, stb->public.user_ptr, stb->a.free);
   content->buffer = buffer;
   return true;
 }
 
-struct ml666_buffer ml666_st__d__content_get(struct ml666_st_builder* stb, const struct ml666_st_content* content){
+struct ml666_buffer_ro ml666_st__d__content_get(struct ml666_st_builder* stb, const struct ml666_st_content* content){
   (void)stb;
-  return content->buffer;
+  return content->buffer.ro;
 }
 
-bool ml666_st__d__comment_set(struct ml666_st_builder* stb, struct ml666_st_comment* comment, struct ml666_buffer buffer){
+struct ml666_buffer ml666_st__d__content_take(struct ml666_st_builder* stb, struct ml666_st_content* content){
   (void)stb;
+  struct ml666_buffer ret = content->buffer;
+  content->buffer = (struct ml666_buffer){0};
+  return ret;
+}
+
+bool ml666_st__d__comment_set(struct ml666_st_builder* _stb, struct ml666_st_comment* comment, struct ml666_buffer buffer){
+  struct ml666_st_builder_default* stb = (struct ml666_st_builder_default*)_stb;
+  ml666_buffer__clear(&comment->buffer, stb->public.user_ptr, stb->a.free);
   comment->buffer = buffer;
   return true;
 }
 
-struct ml666_buffer ml666_st__d__comment_get(struct ml666_st_builder* stb, const struct ml666_st_comment* comment){
+struct ml666_buffer_ro ml666_st__d__comment_get(struct ml666_st_builder* stb, const struct ml666_st_comment* comment){
   (void)stb;
-  return comment->buffer;
+  return comment->buffer.ro;
+}
+
+struct ml666_buffer ml666_st__d__comment_take(struct ml666_st_builder* stb, struct ml666_st_comment* comment){
+  (void)stb;
+  struct ml666_buffer ret = comment->buffer;
+  comment->buffer = (struct ml666_buffer){0};
+  return ret;
 }
 
 static void st_set_helper(struct ml666_st_builder* stb, struct ml666_st_member* member){
