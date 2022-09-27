@@ -7,6 +7,10 @@ The formal syntax assumes each character is an 8 bit byte. For the values of cha
 However, the encoded ml666 document itself must be valid, normalized utf-8 data without any utf-16 surrogates or BOMs,
 and without any noncharacter codepoints, with the exception of the optional (and *not* recommended) utf8 BOM.
 Any program reading an ml666 document must validate that the document meets these criteria.
+Only a certain amount of UTF-8 code pages are currently used, so there exist valid UTF-8 sequences for not yet valid
+unicode characters. A parser may or may not reject those. If it does, it needs to be updated when more unicode codepoints
+become valid. A serializer must always escape such sequences, to ensure all parsers will the ml666 document.
+
 The decoded contents of all tokens is binary data. But if a program chooses to interpret any of them as text, it
 must encode/decode it using utf8 itself, and it must verify the validity of the decoded unicode data itself.
 

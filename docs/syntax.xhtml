@@ -216,7 +216,7 @@
         <rr-n>idchar</rr-n>
         <rr-rr>
           <rr-o>
-            <rr-c>&gt; /=&gt;&lt;</rr-c>
+            <rr-c>&gt;\x00- /=&gt;&lt;</rr-c>
             <a href="#rr-escape">escape</a>
           </rr-o>
         </rr-rr>
@@ -237,7 +237,7 @@
           <rr-a>
             <rr-t>"`"</rr-t>
             <rr-o data-min="0" data-max="inf" class="opt">
-              <rr-c>&gt;\\`&lt;</rr-c>
+              <rr-c>&gt;\x00-\x08\x0B-\x1F\\`&lt;</rr-c>
               <a href="#rr-escape">escape</a>
             </rr-o>
             <rr-t>"`"</rr-t>
@@ -303,7 +303,7 @@
           <rr-a>
             <rr-t>"/*"</rr-t>
             <rr-o data-min="0" data-max="inf" class="opt">
-              <rr-c>&gt;*\\&lt;</rr-c>
+              <rr-c>&gt;\x00-\x08\x0B-\x1F*\\&lt;</rr-c>
               <a href="#rr-escape">escape</a>
             </rr-o>
             <rr-t>"*/"</rr-t>
@@ -316,7 +316,7 @@
           <rr-a>
             <rr-t>"//"</rr-t>
             <rr-o data-min="0" data-max="inf" class="opt">
-              <rr-c>&gt;\x0A&lt;</rr-c>
+              <rr-c>&gt;\x00-\x08\x0B-\x1F&lt;</rr-c>
             </rr-o>
             <rr-t>"\n"</rr-t>
           </rr-a>
