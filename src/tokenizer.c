@@ -144,26 +144,26 @@ struct ml666_tokenizer* ml666_tokenizer_create_p(struct ml666_tokenizer_create_a
     goto error_memfd;
   }
 
-  // Allocate any 4 free pages |A|B|C|D
+  // Allocate any 4 free pages |A|B|C|D|
   char*const mem = mmap(0, size*4, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
   if(mem == MAP_FAILED){
     fprintf(stderr, "%s:%u: mmap failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
-    goto error_mmap;
+    goto error_memfd;
   }
 
-  // Replace them with the same one, rw  |E|B|C|D|
+  // Replace them with the same one, rw |E|B|C|D|
   if(mmap(mem, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, memfd, 0) == MAP_FAILED){
     fprintf(stderr, "%s:%u: mmap failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
     goto error_mmap;
   }
 
-  // Replace them with the same one , rw |E|E|C|D|
+  // Replace them with the same one, rw |E|E|C|D|
   if(mmap(mem+size, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, memfd, 0) == MAP_FAILED){
     fprintf(stderr, "%s:%u: mmap failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
     goto error_mmap;
   }
 
-  // Replace them with the same one, ro  |E|E|E|D|
+  // Replace them with the same one, ro |E|E|E|D|
   if(mmap(mem+size*2, size, PROT_READ, MAP_SHARED | MAP_FIXED, memfd, 0) == MAP_FAILED){
     fprintf(stderr, "%s:%u: mmap failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
     goto error_mmap;
