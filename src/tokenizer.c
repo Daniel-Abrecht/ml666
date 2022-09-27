@@ -378,8 +378,15 @@ bool ml666_tokenizer_next(struct ml666_tokenizer* _tokenizer){
           }else{
             ecsp = true;
           }
-        }else if(cpo)
-          memory[offset+index-cpo] = ch;
+        }else{
+          // We require everything <0x20 to be escaped, except for tab and newline, in some cases.
+          if((unsigned char)ch < 0x20 && !(ch == '\t' && (target_token == ML666_TEXT || target_token == ML666_COMMENT)) && ch != '\n'){
+            tokenizer->public.error = "syntax error: Control characters must be escaped";
+            goto error;
+          }
+          if(cpo)
+            memory[offset+index-cpo] = ch;
+        }
       }
 
       bool omit_last_spaces = (

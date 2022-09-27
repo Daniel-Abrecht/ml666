@@ -28,6 +28,7 @@ int main(){
   }
   if(tokenizer->error){
     fprintf(stderr, "ml666_tokenizer_next failed: At %zu,%zu: %s\n", tokenizer->line, tokenizer->column, tokenizer->error);
+    ml666_tokenizer_destroy(tokenizer);
     return 1;
   }
   ml666_tokenizer_destroy(tokenizer);
