@@ -375,6 +375,11 @@ const struct ml666_buffer* ml666_st__d__attribute_take_value(struct ml666_st_bui
   return &attribute->value;
 }
 
+void ml666_st__d__builder_destroy(struct ml666_st_builder* _stb){
+  struct ml666_st_builder_default* stb = (struct ml666_st_builder_default*)_stb;
+  stb->a.free(stb->public.user_ptr, stb);
+}
+
 ML666_ST_IMPLEMENTATION(ml666_default, ml666_st__d_)
 
 struct ml666_st_builder* ml666_st_builder_create_p(struct ml666_st_builder_create_args args){
@@ -394,9 +399,4 @@ struct ml666_st_builder* ml666_st_builder_create_p(struct ml666_st_builder_creat
   stb->public.user_ptr = args.user_ptr;
   stb->a = args;
   return &stb->public;
-}
-
-void ml666_st_builder_destroy(struct ml666_st_builder* _stb){
-  struct ml666_st_builder_default* stb = (struct ml666_st_builder_default*)_stb;
-  stb->a.free(stb->public.user_ptr, stb);
 }

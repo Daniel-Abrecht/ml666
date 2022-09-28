@@ -16,7 +16,6 @@ struct ml666_st_builder_create_args {
 
 struct ml666_st_builder* ml666_st_builder_create_p(struct ml666_st_builder_create_args args);
 #define ml666_st_builder_create(...) ml666_st_builder_create_p((struct ml666_st_builder_create_args){__VA_ARGS__})
-void ml666_st_builder_destroy(struct ml666_st_builder*);
 
 // This macro can be used for directly accessing the default simple tree data structures
 // It is recommended to use the API functions in simple-tree.h instead, because

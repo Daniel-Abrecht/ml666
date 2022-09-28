@@ -113,6 +113,8 @@ enum ml666_st_attribute_open_flags {
 };
 
 #define ML666_ST_CB(X, ...) \
+  X(builder_destroy, void, (struct ml666_st_builder* stb), __VA_ARGS__) \
+  \
   X(node_put, void, (struct ml666_st_builder* stb, struct ml666_st_node* node), __VA_ARGS__) \
   X(node_ref, bool, (struct ml666_st_builder* stb, struct ml666_st_node* node), __VA_ARGS__) \
   \
@@ -180,6 +182,10 @@ struct ml666_st_cb {
 
 
 // Simple wrappers
+
+static inline void ml666_st_builder_destroy(struct ml666_st_builder* stb){
+  stb->cb->builder_destroy(stb);
+}
 
 static inline void ml666_st_node_put(struct ml666_st_builder* stb, struct ml666_st_node* node){
   stb->cb->node_put(stb, node);
@@ -321,5 +327,6 @@ static inline void ml666_st_subtree_disintegrate(struct ml666_st_builder* stb, s
     ml666_st_member_set(stb, 0, it, 0);
   }
 }
+
 
 #endif
