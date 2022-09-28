@@ -1,9 +1,11 @@
+#define _GNU_SOURCE
 #include <ml666/simple-tree.h>
 #include <ml666/simple-tree-serializer.h>
 #include <ml666/utils.h>
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <sys/mman.h>
 
 #define SERIALIZER_STATE \
   X(SERIALIZER_W_START) \
@@ -49,7 +51,7 @@ struct ml666_st_serializer_private {
   struct ml666_st_serializer public;
   struct ml666_st_node* node;
   int fd;
-  unsigned level, spaces;
+  unsigned level, spaces, lf_counter;
   const char* esc_chars;
   struct ml666_buffer_info buffer_info;
 
@@ -60,7 +62,7 @@ struct ml666_st_serializer_private {
   enum data_encoding encoding;
   struct ml666_buffer_ro data;
   struct ml666_buffer outbuf;
-  struct ml666_buffer_ro outptr;
+  struct ml666_buffer outptr;
 
   ml666__cb__malloc* malloc;
   ml666__cb__free*   free;
@@ -79,20 +81,49 @@ struct ml666_st_serializer* ml666_st_serializer_create_p(struct ml666_st_seriali
     args.malloc = ml666__d__malloc;
   if(!args.free)
     args.free = ml666__d__free;
-  unsigned outbuf_length = sysconf(_SC_PAGESIZE);
+
   struct ml666_buffer outbuf = {
-    .data = args.malloc(args.user_ptr, outbuf_length),
-    .length = outbuf_length,
+    .length = sysconf(_SC_PAGESIZE),
   };
-  if(!outbuf.data){
-    fprintf(stderr, "malloc failed");
-    return false;
+
+  {
+    const int memfd = memfd_create("ml666 tokenizer ringbuffer", MFD_CLOEXEC);
+    if(memfd == -1){
+      fprintf(stderr, "%s:%u: ml666_st_serializer_create_p: memfd_create failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
+      return 0;
+    }
+    if(ftruncate(memfd, outbuf.length) == -1){
+      fprintf(stderr, "%s:%u: ml666_st_serializer_create_p: ftruncate failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
+      close(memfd);
+      return 0;
+    }
+    // Allocate any 2 free pages |A|B|
+    char*const mem = mmap(0, outbuf.length*2, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if(mem == MAP_FAILED){
+      fprintf(stderr, "%s:%u: ml666_st_serializer_create_p: mmap failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
+      close(memfd);
+    }
+    // Replace them with the same one, rw |E|B|
+    if(mmap(mem, outbuf.length, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, memfd, 0) == MAP_FAILED){
+      fprintf(stderr, "%s:%u: ml666_st_serializer_create_p: mmap failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
+      munmap(mem, outbuf.length*2);
+      close(memfd);
+    }
+    // Replace them with the same one, rw |E|E|
+    if(mmap(mem+outbuf.length, outbuf.length, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, memfd, 0) == MAP_FAILED){
+      fprintf(stderr, "%s:%u: ml666_st_serializer_create_p: mmap failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
+      munmap(mem, outbuf.length*2);
+      close(memfd);
+    }
+    close(memfd);
+    outbuf.data = mem;
   }
+
   struct ml666_st_serializer_private* sts = args.malloc(args.user_ptr, sizeof(*sts));
   if(!sts){
     fprintf(stderr, "malloc failed");
-    args.free(args.user_ptr, outbuf.data);
-    return false;
+    munmap(outbuf.data, outbuf.length*2);
+    return 0;
   }
   memset(sts, 0, sizeof(*sts));
   *(struct ml666_st_builder**)&sts->public.stb = args.stb;
@@ -113,129 +144,142 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
   while(sts->state != SERIALIZER_W_DONE || sts->data.length || sts->outptr.length){
     if(sts->data.length || sts->outptr.length){
       struct ml666_buffer_ro buf = sts->data;
-      struct ml666_buffer outbuf = sts->outbuf;
-      size_t i=0, j=sts->outptr.data-outbuf.data+sts->outptr.length;
+      struct ml666_buffer outptr = sts->outptr;
       if(sts->spaces){
+        const size_t space_left = sts->outbuf.length - outptr.length;
         size_t l = sts->spaces;
-        if(l > outbuf.length-j)
-          l = outbuf.length-j;
-        memset(outbuf.data+j, ' ', l);
+        if(l > space_left)
+          l = space_left;
+        memset(&outptr.data[outptr.length], ' ', l);
         sts->spaces -= l;
-        j += l;
+        outptr.length += l;
       }
       if(!sts->spaces && buf.length){
         switch(sts->encoding){
           case ENC_RAW: {
+            const size_t space_left = sts->outbuf.length - outptr.length;
             size_t l = buf.length;
-            if(l > outbuf.length-j)
-              l = outbuf.length-j;
-            memcpy(outbuf.data+j, buf.data, l);
-            i += l;
-            j += l;
+            if(l > space_left)
+              l = space_left;
+            memcpy(&outptr.data[outptr.length], buf.data, l);
+            outptr.length += l;
+            buf.length -= l;
+            buf.data += l;
           } break;
           case ENC_ESCAPED: {
-            while(i<buf.length && j<outbuf.length-6){
-              unsigned char ch = buf.data[i];
+            while(buf.length && sts->outbuf.length - outptr.length >= 6){
+              unsigned char ch = *buf.data;
               if(ch >= 0x80){
                 // Check utf-8, escape if not valid utf-8
                 struct streaming_utf8_validator v = {0};
                 unsigned length = 2 + (ch >= 0xE0) + (ch >= 0xF0) + (ch >= 0xF8) + (ch >= 0xFC);
-                size_t n = i+length < buf.length ? i+length : buf.length;
-                for(unsigned k=i; k<n; k++){
+                size_t n = length < buf.length ? length : buf.length;
+                for(unsigned k=0; k<n; k++){
                   if(!utf8_validate(&v,buf.data[k])){
-                    i += 1;
+                    buf.length--;
+                    buf.data++;
                     goto outhex;
                   }
                 }
                 if(!utf8_validate(&v,EOF)){
-                  i += 1;
+                  buf.length--;
+                  buf.data++;
                   goto outhex;
                 }
-                while(i<n)
-                  outbuf.data[j++] = buf.data[i++];
+                buf.length -= n;
+                while(n--)
+                  outptr.data[outptr.length++] = *(buf.data++);
                 continue;
               }
-              i += 1;
+              buf.length--;
+              buf.data++;
               if(ch && strchr(sts->esc_chars, ch)){
                 switch(ch){
                   case '\n': ch = 'n'; break;
                   case '\t': ch = 't'; break;
                 }
-                outbuf.data[j++] = '\\';
-                outbuf.data[j++] = ch;
+                outptr.data[outptr.length++] = '\\';
+                outptr.data[outptr.length++] = ch;
               }else switch(ch){
-                case '\a'  : outbuf.data[j++] = '\\'; outbuf.data[j++] = 'a'; break;
-                case '\b'  : outbuf.data[j++] = '\\'; outbuf.data[j++] = 'b'; break;
-                case '\x1B': outbuf.data[j++] = '\\'; outbuf.data[j++] = 'e'; break;
-                case '\f'  : outbuf.data[j++] = '\\'; outbuf.data[j++] = 'f'; break;
-                case '\v'  : outbuf.data[j++] = '\\'; outbuf.data[j++] = 'v'; break;
+                case '\a'  : outptr.data[outptr.length++] = '\\'; outptr.data[outptr.length++] = 'a'; break;
+                case '\b'  : outptr.data[outptr.length++] = '\\'; outptr.data[outptr.length++] = 'b'; break;
+                case '\x1B': outptr.data[outptr.length++] = '\\'; outptr.data[outptr.length++] = 'e'; break;
+                case '\f'  : outptr.data[outptr.length++] = '\\'; outptr.data[outptr.length++] = 'f'; break;
+                case '\v'  : outptr.data[outptr.length++] = '\\'; outptr.data[outptr.length++] = 'v'; break;
                 default: {
                   if(ch >= ' ' || ch == '\t' || ch == '\n'){
-                    outbuf.data[j++] = ch;
+                    outptr.data[outptr.length++] = ch;
                   }else goto outhex;
                 } break;
               }
               if(0) outhex:{
-                outbuf.data[j++] = '\\';
-                outbuf.data[j++] = 'x';
-                outbuf.data[j++] = ML666_B36[ch >>  4];
-                outbuf.data[j++] = ML666_B36[ch & 0xF];
+                outptr.data[outptr.length++] = '\\';
+                outptr.data[outptr.length++] = 'x';
+                outptr.data[outptr.length++] = ML666_B36[ch >>  4];
+                outptr.data[outptr.length++] = ML666_B36[ch & 0xF];
               }
             }
           } break;
           case ENC_BASE64: {
-            size_t len = buf.length - (buf.length % 3);
-            unsigned char* data = (unsigned char*)buf.data;
-            while(i<len && j<outbuf.length-5){
-              if(i && i % (80/4*3-6) == 0)
-                outbuf.data[j++] = '\n';
-              outbuf.data[j++] = ML666_B64[                            (data[i+0] >> 2)];
-              outbuf.data[j++] = ML666_B64[((data[i+0] & 0x03) << 4) | (data[i+1] >> 4)];
-              outbuf.data[j++] = ML666_B64[((data[i+1] & 0x0F) << 2) | (data[i+2] >> 6)];
-              outbuf.data[j++] = ML666_B64[  data[i+2] & 0x3F                          ];
-              i += 3;
+            unsigned lf_counter = sts->lf_counter;
+            while(buf.length >= 3 && sts->outbuf.length - outptr.length >= 5){
+              if(lf_counter == 80/4-2){
+                outptr.data[outptr.length++] = '\n';
+                lf_counter = 0;
+              }
+              const unsigned char*const data = (const unsigned char*)buf.data;
+              outptr.data[outptr.length++] = ML666_B64[                          (data[0] >> 2)];
+              outptr.data[outptr.length++] = ML666_B64[((data[0] & 0x03) << 4) | (data[1] >> 4)];
+              outptr.data[outptr.length++] = ML666_B64[((data[1] & 0x0F) << 2) | (data[2] >> 6)];
+              outptr.data[outptr.length++] = ML666_B64[  data[2] & 0x3F                        ];
+              buf.data   += 3;
+              buf.length -= 3;
+              lf_counter += 1;
             }
-            len = buf.length - i;
-            if(len && len < 3 && j<outbuf.length-5){
-              if(i && i % (80/4*3-6) == 0)
-                outbuf.data[j++] = '\n';
-              switch(len){
+            if(buf.length && buf.length < 3 && sts->outbuf.length - outptr.length >= 5){
+              if(lf_counter == 80/4-2)
+                outptr.data[outptr.length++] = '\n';
+              switch(buf.length){
                 case 1: {
-                  outbuf.data[j++] = ML666_B64[                            (data[i+0] >> 2)];
-                  outbuf.data[j++] = ML666_B64[((data[i+0] & 0x03) << 4)                   ];
-                  outbuf.data[j++] = '=';
-                  outbuf.data[j++] = '=';
-                  i += 1;
+                  const unsigned char*const data = (const unsigned char*)buf.data;
+                  outptr.data[outptr.length++] = ML666_B64[                          (data[0] >> 2)];
+                  outptr.data[outptr.length++] = ML666_B64[((data[0] & 0x03) << 4)                 ];
+                  outptr.data[outptr.length++] = '=';
+                  outptr.data[outptr.length++] = '=';
                 } break;
                 case 2: {
-                  outbuf.data[j++] = ML666_B64[                            (data[i+0] >> 2)];
-                  outbuf.data[j++] = ML666_B64[((data[i+0] & 0x03) << 4) | (data[i+1] >> 4)];
-                  outbuf.data[j++] = ML666_B64[((data[i+1] & 0x0F) << 2)                   ];
-                  outbuf.data[j++] = '=';
-                  i += 2;
+                  const unsigned char*const data = (const unsigned char*)buf.data;
+                  outptr.data[outptr.length++] = ML666_B64[                          (data[0] >> 2)];
+                  outptr.data[outptr.length++] = ML666_B64[((data[0] & 0x03) << 4) | (data[1] >> 4)];
+                  outptr.data[outptr.length++] = ML666_B64[((data[1] & 0x0F) << 2)                 ];
+                  outptr.data[outptr.length++] = '=';
                 } break;
               }
+              buf.data   = 0;
+              buf.length = 0;
+              lf_counter = 0;
             }
+            sts->lf_counter = lf_counter;
           } break;
         }
       }
-      sts->data.length = buf.length - i;
-      sts->data.data = buf.data + i;
-      sts->outptr.length += j;
-      if(!sts->data.length)
+      if(!buf.length)
         sts->encoding = ENC_RAW;
-      if(sts->outptr.length){
-        int res = write(sts->fd, sts->outptr.data, sts->outptr.length);
+      if(outptr.length){
+        int res = write(sts->fd, outptr.data, outptr.length);
         if(res < 0){
+          sts->data = buf;
+          sts->outptr = outptr;
           sts->public.error = strerror(errno);
           return false;
         }
-        sts->outptr.length -= res;
-        sts->outptr.data   += res;
-        if(!sts->outptr.length){
-          sts->outptr.data = sts->outbuf.data;
-        }else break;
+        outptr.length -= res;
+        outptr.data   += res;
+        if((size_t)(outptr.data - sts->outbuf.data) > sts->outbuf.length)
+          outptr.data -= sts->outbuf.length;
       }
+      sts->data = buf;
+      sts->outptr = outptr;
     }
     if(!sts->data.length){
       (void)serializer_state_name;
@@ -450,6 +494,6 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
 void ml666_st_serializer_destroy(struct ml666_st_serializer* _sts){
   struct ml666_st_serializer_private* sts = (struct ml666_st_serializer_private*)_sts;
   ml666_st_node_put(sts->public.stb, sts->node);
-  sts->free(sts->public.user_ptr, sts->outbuf.data);
+  munmap(sts->outbuf.data, sts->outbuf.length*2);
   sts->free(sts->public.user_ptr, sts);
 }
