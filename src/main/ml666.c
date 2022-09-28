@@ -1,7 +1,7 @@
 #include <ml666/simple-tree.h>
 #include <ml666/simple-tree-parser.h>
 #include <ml666/simple-tree-builder.h>
-#include <ml666/simple-tree-serializer.h>
+#include <ml666/simple-tree-ml666-serializer.h>
 #include <stdio.h>
 
 int main(){
@@ -9,7 +9,7 @@ int main(){
   struct ml666_st_builder* stb = ml666_st_builder_create(0);
   if(!stb){
     fprintf(stderr, "ml666_st_builder_create failed\n");
-    return 0;
+    return 1;
   }
 
   // Parsing the document
@@ -20,7 +20,13 @@ int main(){
   }
 
   // Serializing the document
-  ml666_st_serialize(1, stb, ML666_ST_NODE(document));
+  struct ml666_st_serializer* serializer = ml666_st_ml666_serializer_create(1, stb, ML666_ST_NODE(document));
+  if(!serializer){
+    fprintf(stderr, "ml666_st_ml666_serializer_create failed");
+    return 1;
+  }
+  ml666_st_serialize(serializer);
+  ml666_st_serializer_destroy(serializer);
 
   // Freeing all nodes
   // This recursively detaches all nodes from their parent, releasing their only reference

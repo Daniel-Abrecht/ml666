@@ -1,6 +1,6 @@
 #define _GNU_SOURCE
 #include <ml666/simple-tree.h>
-#include <ml666/simple-tree-serializer.h>
+#include <ml666/simple-tree-ml666-serializer.h>
 #include <ml666/utils.h>
 #include <string.h>
 #include <unistd.h>
@@ -68,7 +68,15 @@ struct ml666_st_serializer_private {
   ml666__cb__free*   free;
 };
 
-struct ml666_st_serializer* ml666_st_serializer_create_p(struct ml666_st_serializer_create_args args){
+ml666_st_serializer_cb_next ml666_st_d_serializer_next;
+ml666_st_serializer_cb_destroy ml666_st_d_serializer_destroy;
+
+static const struct ml666_st_serializer_cb st_serializer_default = {
+  .next = ml666_st_d_serializer_next,
+  .destroy = ml666_st_d_serializer_destroy,
+};
+
+struct ml666_st_serializer* ml666_st_ml666_serializer_create_p(struct ml666_st_ml666_serializer_create_args args){
   if(!args.stb){
     fprintf(stderr, "ml666_st_serializer_create_p: mandatory argument \"stb\" not set!\n");
     return false;
@@ -126,6 +134,7 @@ struct ml666_st_serializer* ml666_st_serializer_create_p(struct ml666_st_seriali
     return 0;
   }
   memset(sts, 0, sizeof(*sts));
+  *(const struct ml666_st_serializer_cb**)&sts->public.cb = &st_serializer_default;
   *(struct ml666_st_builder**)&sts->public.stb = args.stb;
   sts->public.user_ptr = args.user_ptr;
   sts->outbuf = outbuf;
@@ -139,7 +148,7 @@ struct ml666_st_serializer* ml666_st_serializer_create_p(struct ml666_st_seriali
   return &sts->public;
 }
 
-bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
+bool ml666_st_d_serializer_next(struct ml666_st_serializer* _sts){
   struct ml666_st_serializer_private*restrict sts = (struct ml666_st_serializer_private*)_sts;
   while(sts->state != SERIALIZER_W_DONE || sts->data.length || sts->outptr.length){
     if(sts->data.length || sts->outptr.length){
@@ -491,7 +500,7 @@ bool ml666_st_serializer_next(struct ml666_st_serializer* _sts){
   return sts->state != SERIALIZER_W_DONE;
 }
 
-void ml666_st_serializer_destroy(struct ml666_st_serializer* _sts){
+void ml666_st_d_serializer_destroy(struct ml666_st_serializer* _sts){
   struct ml666_st_serializer_private* sts = (struct ml666_st_serializer_private*)_sts;
   ml666_st_node_put(sts->public.stb, sts->node);
   munmap(sts->outbuf.data, sts->outbuf.length*2);
