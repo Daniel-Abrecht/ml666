@@ -68,12 +68,12 @@ struct ml666_st_serializer_private {
   ml666__cb__free*   free;
 };
 
-ml666_st_serializer_cb_next ml666_st_d_serializer_next;
-ml666_st_serializer_cb_destroy ml666_st_d_serializer_destroy;
+static ml666_st_serializer_cb_next ml666_st_ml666_serializer_next;
+static ml666_st_serializer_cb_destroy ml666_st_ml666_serializer_destroy;
 
 static const struct ml666_st_serializer_cb st_serializer_default = {
-  .next = ml666_st_d_serializer_next,
-  .destroy = ml666_st_d_serializer_destroy,
+  .next = ml666_st_ml666_serializer_next,
+  .destroy = ml666_st_ml666_serializer_destroy,
 };
 
 struct ml666_st_serializer* ml666_st_ml666_serializer_create_p(struct ml666_st_ml666_serializer_create_args args){
@@ -148,7 +148,7 @@ struct ml666_st_serializer* ml666_st_ml666_serializer_create_p(struct ml666_st_m
   return &sts->public;
 }
 
-bool ml666_st_d_serializer_next(struct ml666_st_serializer* _sts){
+static bool ml666_st_ml666_serializer_next(struct ml666_st_serializer* _sts){
   struct ml666_st_serializer_private*restrict sts = (struct ml666_st_serializer_private*)_sts;
   while(sts->state != SERIALIZER_W_DONE || sts->data.length || sts->outptr.length){
     if(sts->data.length || sts->outptr.length){
@@ -360,7 +360,7 @@ bool ml666_st_d_serializer_next(struct ml666_st_serializer* _sts){
             sts->state = SERIALIZER_W_ATTRIBUTE_NEXT;
           }
         } break;
-        case SERIALIZER_W_ATTRIBUTE_VALUE_START: { // TODO: This should
+        case SERIALIZER_W_ATTRIBUTE_VALUE_START: {
           sts->data.data = "=";
           sts->data.length = 1;
           sts->state = SERIALIZER_W_CONTENT_START;
@@ -431,7 +431,6 @@ bool ml666_st_d_serializer_next(struct ml666_st_serializer* _sts){
           sts->state = SERIALIZER_W_CONTENT;
         } break;
         case SERIALIZER_W_CONTENT: {
-          // TODO: Consider base64 encoding if overhead is lower
           sts->esc_chars = "`\\";
           switch(sts->buffer_info.best_encoding){
             case ML666_BIBE_ESCAPE: sts->encoding = ENC_ESCAPED; break;
@@ -500,7 +499,7 @@ bool ml666_st_d_serializer_next(struct ml666_st_serializer* _sts){
   return sts->state != SERIALIZER_W_DONE;
 }
 
-void ml666_st_d_serializer_destroy(struct ml666_st_serializer* _sts){
+static void ml666_st_ml666_serializer_destroy(struct ml666_st_serializer* _sts){
   struct ml666_st_serializer_private* sts = (struct ml666_st_serializer_private*)_sts;
   ml666_st_node_put(sts->public.stb, sts->node);
   munmap(sts->outbuf.data, sts->outbuf.length*2);

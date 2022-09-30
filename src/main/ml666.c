@@ -2,9 +2,51 @@
 #include <ml666/simple-tree-parser.h>
 #include <ml666/simple-tree-builder.h>
 #include <ml666/simple-tree-ml666-serializer.h>
+#include <ml666/simple-tree-json-serializer.h>
 #include <stdio.h>
+#include <string.h>
 
-int main(){
+enum format {
+  F_ML666,
+  F_JSON,
+};
+
+struct arguments {
+  enum format output_format;
+};
+
+bool parse_args(struct arguments* args, int* argc, char* argv[]){
+  int j=1;
+  for(int i=1,n=*argc; i<n; i++){
+    if(i > j)
+      argv[j] = argv[i];
+    if(argv[i][0] != '-'){
+      j += 1;
+      continue;
+    }
+    if(!strcmp(argv[i], "--output-format")){
+      if(++i >= n)
+        return false;
+      if(!strcmp(argv[i], "ml666")){
+        args->output_format = F_ML666;
+      }else if(!strcmp(argv[i], "json")){
+        args->output_format = F_JSON;
+      }else return false;
+    }else return false;
+  }
+  *argc = j;
+  if(j > 1)
+    return false;
+  return true;
+}
+
+int main(int argc, char* argv[]){
+  struct arguments args = {0};
+  if(!parse_args(&args, &argc, argv)){
+    fprintf(stderr, "usage: %s [--output-format ml666|json]\n", *argv);
+    return 1;
+  }
+
   // Instanciating the tree builder
   struct ml666_st_builder* stb = ml666_st_builder_create(0);
   if(!stb){
@@ -20,9 +62,13 @@ int main(){
   }
 
   // Serializing the document
-  struct ml666_st_serializer* serializer = ml666_st_ml666_serializer_create(1, stb, ML666_ST_NODE(document));
+  struct ml666_st_serializer* serializer = 0;
+  switch(args.output_format){
+    case F_ML666: serializer = ml666_st_ml666_serializer_create(1, stb, ML666_ST_NODE(document)); break;
+    case F_JSON : serializer = ml666_st_json_serializer_create (1, stb, ML666_ST_NODE(document)); break;
+  }
   if(!serializer){
-    fprintf(stderr, "ml666_st_ml666_serializer_create failed");
+    fprintf(stderr, "error: couldn't create serializer\n");
     return 1;
   }
   ml666_st_serialize(serializer);
