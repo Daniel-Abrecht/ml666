@@ -180,17 +180,17 @@ static bool ml666_st_ml666_serializer_next(struct ml666_st_serializer* _sts){
               unsigned char ch = *buf.data;
               if(ch >= 0x80){
                 // Check utf-8, escape if not valid utf-8
-                struct streaming_utf8_validator v = {0};
+                struct ml666_streaming_utf8_validator v = {0};
                 unsigned length = 2 + (ch >= 0xE0) + (ch >= 0xF0) + (ch >= 0xF8) + (ch >= 0xFC);
                 size_t n = length < buf.length ? length : buf.length;
                 for(unsigned k=0; k<n; k++){
-                  if(!utf8_validate(&v,buf.data[k])){
+                  if(!ml666_utf8_validate(&v,buf.data[k])){
                     buf.length--;
                     buf.data++;
                     goto outhex;
                   }
                 }
-                if(!utf8_validate(&v,EOF)){
+                if(!ml666_utf8_validate(&v,EOF)){
                   buf.length--;
                   buf.data++;
                   goto outhex;

@@ -14,7 +14,7 @@ struct ml666_st_builder_create_args {
   struct ml666_hashed_buffer_set* buffer_set;
 };
 
-struct ml666_st_builder* ml666_st_builder_create_p(struct ml666_st_builder_create_args args);
+ML666_EXPORT struct ml666_st_builder* ml666_st_builder_create_p(struct ml666_st_builder_create_args args);
 #define ml666_st_builder_create(...) ml666_st_builder_create_p((struct ml666_st_builder_create_args){__VA_ARGS__})
 
 // This macro can be used for directly accessing the default simple tree data structures

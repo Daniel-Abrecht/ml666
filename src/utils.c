@@ -133,13 +133,13 @@ struct ml666_buffer_info ml666_buffer__analyze(struct ml666_buffer_ro buffer){
   }
   bi.is_valid_utf8 = true;
   size_t approximated_escaped_overhead = 0;
-  struct streaming_utf8_validator u8v;
+  struct ml666_streaming_utf8_validator u8v;
   unsigned l = 0;
   for(size_t i=0; i<length; i++){
     {
       unsigned char ch = buffer.data[i];
       l = u8v.index ? l + 1 : 0;
-      if(!utf8_validate(&u8v, ch)){
+      if(!ml666_utf8_validate(&u8v, ch)){
         bi.is_valid_utf8 = false;
         goto count_invalid;
       }
@@ -333,7 +333,7 @@ struct ml666_hashed_buffer_set* ml666_get_default_hashed_buffer_set(void){
   return &default_buffer_set.super;
 }
 
-bool utf8_validate(struct streaming_utf8_validator*restrict const v, const int _ch){
+bool ml666_utf8_validate(struct ml666_streaming_utf8_validator*restrict const v, const int _ch){
   const uint_least8_t ch = _ch & 0xFF;
   if(_ch == EOF){
     if(v->index)

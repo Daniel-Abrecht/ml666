@@ -32,7 +32,7 @@ struct ml666_simple_tree_parser_create_args {
   ml666__cb__free*    free;
 };
 
-struct ml666_simple_tree_parser* ml666_simple_tree_parser_create_p(struct ml666_simple_tree_parser_create_args args);
+ML666_EXPORT struct ml666_simple_tree_parser* ml666_simple_tree_parser_create_p(struct ml666_simple_tree_parser_create_args args);
 #define ml666_simple_tree_parser_create(...) ml666_simple_tree_parser_create_p((struct ml666_simple_tree_parser_create_args){__VA_ARGS__})
 
 static inline void ml666_simple_tree_parser_destroy(struct ml666_simple_tree_parser* stp){

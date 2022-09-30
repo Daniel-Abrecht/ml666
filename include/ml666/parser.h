@@ -80,7 +80,7 @@ struct ml666_parser_create_args {
   ml666__cb__realloc* realloc;
   ml666__cb__free* free;
 };
-struct ml666_parser* ml666_parser_create_p(struct ml666_parser_create_args args);
+ML666_EXPORT struct ml666_parser* ml666_parser_create_p(struct ml666_parser_create_args args);
 #define ml666_parser_create(...) ml666_parser_create_p((struct ml666_parser_create_args){__VA_ARGS__})
 
 static inline bool ml666_parser_next(struct ml666_parser* parser){
@@ -104,10 +104,10 @@ static inline void ml666_parser_destroy(struct ml666_parser* parser){
  * They allocate the data using realloc, and free it with free.
  * But the ml666_opaque_tag_name and ml666_opaque_attribute_name instance itself are allocated once per-parser.
  */
-ml666_parser_api_tag_name_append       ml666_parser__d_mal__tag_name_append;
-ml666_parser_api_tag_name_free         ml666_parser__d_mal__tag_name_free;
-ml666_parser_api_attribute_name_append ml666_parser__d_mal__attribute_name_append;
-ml666_parser_api_attribute_name_free   ml666_parser__d_mal__attribute_name_free;
+ML666_EXPORT ml666_parser_api_tag_name_append       ml666_parser__d_mal__tag_name_append;
+ML666_EXPORT ml666_parser_api_tag_name_free         ml666_parser__d_mal__tag_name_free;
+ML666_EXPORT ml666_parser_api_attribute_name_append ml666_parser__d_mal__attribute_name_append;
+ML666_EXPORT ml666_parser_api_attribute_name_free   ml666_parser__d_mal__attribute_name_free;
 
 
 #endif

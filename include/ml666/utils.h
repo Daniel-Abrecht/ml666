@@ -31,12 +31,12 @@ static inline void ml666_hashed_buffer__set(struct ml666_hashed_buffer* hashed, 
 
 // UTF-8
 
-struct streaming_utf8_validator {
+struct ml666_streaming_utf8_validator {
   uint_least8_t index : 3;
   uint_least8_t state : 4;
 };
 
-bool utf8_validate(struct streaming_utf8_validator*restrict const v, const int _ch);
+ML666_EXPORT bool ml666_utf8_validate(struct ml666_streaming_utf8_validator*restrict const v, const int _ch);
 
 // Useful function to work with ml666_buffer
 
@@ -48,7 +48,7 @@ struct ml666_buffer__dup_args {
 };
 typedef bool ml666_buffer__cb__dup_p(struct ml666_buffer__dup_args a);
 #define ml666_buffer__dup(...) ml666_buffer__dup_p((struct ml666_buffer__dup_args){__VA_ARGS__})
-ml666_buffer__cb__dup_p ml666_buffer__dup_p;
+ML666_EXPORT ml666_buffer__cb__dup_p ml666_buffer__dup_p;
 
 struct ml666_hashed_buffer__dup_args {
   struct ml666_hashed_buffer* dest;
@@ -59,7 +59,7 @@ struct ml666_hashed_buffer__dup_args {
 };
 typedef bool ml666_hashed_buffer__cb__dup_p(struct ml666_hashed_buffer__dup_args a);
 #define ml666_hashed_buffer__dup(...) ml666_hashed_buffer__dup_p((struct ml666_hashed_buffer__dup_args){__VA_ARGS__})
-ml666_hashed_buffer__cb__dup_p ml666_hashed_buffer__dup_p;
+ML666_EXPORT ml666_hashed_buffer__cb__dup_p ml666_hashed_buffer__dup_p;
 
 struct ml666_buffer__clear_args {
   struct ml666_buffer* buffer;
@@ -68,7 +68,7 @@ struct ml666_buffer__clear_args {
 };
 typedef bool ml666_buffer__cb__clear_p(struct ml666_buffer__clear_args a);
 #define ml666_buffer__clear(...) ml666_buffer__clear_p((struct ml666_buffer__clear_args){__VA_ARGS__})
-ml666_buffer__cb__clear_p ml666_buffer__clear_p;
+ML666_EXPORT ml666_buffer__cb__clear_p ml666_buffer__clear_p;
 
 struct ml666_hashed_buffer__clear_args {
   struct ml666_hashed_buffer* buffer;
@@ -78,7 +78,7 @@ struct ml666_hashed_buffer__clear_args {
 };
 typedef bool ml666_hashed_buffer__cb__clear_p(struct ml666_hashed_buffer__clear_args a);
 #define ml666_hashed_buffer__clear(...) ml666_hashed_buffer__clear_p((struct ml666_hashed_buffer__clear_args){__VA_ARGS__})
-ml666_hashed_buffer__cb__clear_p ml666_hashed_buffer__clear_p;
+ML666_EXPORT ml666_hashed_buffer__cb__clear_p ml666_hashed_buffer__clear_p;
 
 struct ml666_buffer__append_args {
   struct ml666_buffer* buffer;
@@ -93,7 +93,7 @@ struct ml666_buffer__append_args {
  * \returns true on success, false on failure
  */
 #define ml666_buffer__append(...) ml666_buffer__append_p((struct ml666_buffer__append_args){__VA_ARGS__})
-bool ml666_buffer__append_p(struct ml666_buffer__append_args args);
+ML666_EXPORT bool ml666_buffer__append_p(struct ml666_buffer__append_args args);
 
 struct ml666_hashed_buffer__append_args {
   struct ml666_hashed_buffer* buffer;
@@ -108,7 +108,7 @@ struct ml666_hashed_buffer__append_args {
  * \returns true on success, false on failure
  */
 #define ml666_hashed_buffer__append(...) ml666_hashed_buffer__append_p((struct ml666_hashed_buffer__append_args){__VA_ARGS__})
-bool ml666_hashed_buffer__append_p(struct ml666_hashed_buffer__append_args args);
+ML666_EXPORT bool ml666_hashed_buffer__append_p(struct ml666_hashed_buffer__append_args args);
 
 enum ml666_buffer_info_best_encoding {
   ML666_BIBE_ESCAPE,
@@ -126,7 +126,7 @@ struct ml666_buffer_info {
   enum ml666_buffer_info_best_encoding best_encoding : 1;
 };
 
-struct ml666_buffer_info ml666_buffer__analyze(struct ml666_buffer_ro buffer);
+ML666_EXPORT struct ml666_buffer_info ml666_buffer__analyze(struct ml666_buffer_ro buffer);
 
 
 //// hashed_buffer_set api
@@ -189,7 +189,7 @@ static inline void ml666_hashed_buffer_set__destroy(struct ml666_hashed_buffer_s
 }
 
 // Default implementation
-struct ml666_hashed_buffer_set* ml666_get_default_hashed_buffer_set(void); // This returns a static buffer_set
+ML666_EXPORT struct ml666_hashed_buffer_set* ml666_get_default_hashed_buffer_set(void); // This returns a static buffer_set
 
 struct ml666_create_default_hashed_buffer_set_args {
   void* that;
@@ -198,15 +198,15 @@ struct ml666_create_default_hashed_buffer_set_args {
   ml666_buffer__cb__dup_p* dup_buffer;
   ml666_buffer__cb__clear_p* clear_buffer;
 };
-struct ml666_hashed_buffer_set* ml666_create_default_hashed_buffer_set_p(struct ml666_create_default_hashed_buffer_set_args); // This creates a buffer set with custom parameters
+ML666_EXPORT struct ml666_hashed_buffer_set* ml666_create_default_hashed_buffer_set_p(struct ml666_create_default_hashed_buffer_set_args); // This creates a buffer set with custom parameters
 #define ml666_create_default_hashed_buffer_set(...) ml666_create_default_hashed_buffer_set_p((struct ml666_create_default_hashed_buffer_set_args){__VA_ARGS__})
 ////
 
 
 // other stuff
 
-ml666__cb__malloc  ml666__d__malloc;
-ml666__cb__realloc ml666__d__realloc;
-ml666__cb__free    ml666__d__free;
+ML666_EXPORT ml666__cb__malloc  ml666__d__malloc;
+ML666_EXPORT ml666__cb__realloc ml666__d__realloc;
+ML666_EXPORT ml666__cb__free    ml666__d__free;
 
 #endif

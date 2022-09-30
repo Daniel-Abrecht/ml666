@@ -81,7 +81,7 @@ static bool tag_pop(struct ml666_parser* parser){
   return ml666_st_node_ref_set(stp->public.stb, &stp->cur, parent);
 }
 
-bool data_append(struct ml666_parser* parser, struct ml666_buffer_ro data){
+static bool data_append(struct ml666_parser* parser, struct ml666_buffer_ro data){
   struct ml666_simple_tree_parser_default* stp = parser->user_ptr;
   if(!stp->cur){
     parser->error = "simple_tree_parser::data_append: invalid parser state\n";
@@ -112,7 +112,7 @@ bool data_append(struct ml666_parser* parser, struct ml666_buffer_ro data){
   return true;
 }
 
-bool comment_append(struct ml666_parser* parser, struct ml666_buffer_ro data){
+static bool comment_append(struct ml666_parser* parser, struct ml666_buffer_ro data){
   struct ml666_simple_tree_parser_default* stp = parser->user_ptr;
   if(!stp->cur){
     parser->error = "simple_tree_parser::data_append: invalid parser state\n";
@@ -158,7 +158,7 @@ static bool set_attribute(struct ml666_parser* parser, ml666_opaque_attribute_na
   return !!attribute;
 }
 
-bool value_append(struct ml666_parser* parser, struct ml666_buffer_ro data){
+static bool value_append(struct ml666_parser* parser, struct ml666_buffer_ro data){
   struct ml666_simple_tree_parser_default* stp = parser->user_ptr;
   if(!stp->cur || !stp->current_attribute){
     parser->error = "simple_tree_parser::data_append: invalid parser state\n";

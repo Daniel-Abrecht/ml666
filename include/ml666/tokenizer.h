@@ -22,7 +22,7 @@ enum ml666_token {
 #undef X
   ML666_TOKEN_COUNT
 };
-extern const char*const ml666__token_name[ML666_TOKEN_COUNT];
+ML666_EXPORT extern const char*const ml666__token_name[ML666_TOKEN_COUNT];
 
 struct ml666_tokenizer {
   const struct ml666_tokenizer_cb*const cb;
@@ -49,7 +49,7 @@ struct ml666_tokenizer_create_args {
   ml666__cb__free*   free;
   bool disable_utf8_validation;
 };
-struct ml666_tokenizer* ml666_tokenizer_create_p(struct ml666_tokenizer_create_args args);
+ML666_EXPORT struct ml666_tokenizer* ml666_tokenizer_create_p(struct ml666_tokenizer_create_args args);
 #define ml666_tokenizer_create(...) ml666_tokenizer_create_p((struct ml666_tokenizer_create_args){__VA_ARGS__})
 
 // returns false on EOF

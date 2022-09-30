@@ -32,6 +32,8 @@ CFLAGS  += -Wall -Wextra -pedantic -Werror
 CFLAGS  += -fstack-protector-all
 CFLAGS  += -Wno-missing-field-initializers
 
+CFLAGS  += -fvisibility=hidden -DML666_BUILD
+
 ifndef debug
 CFLAGS  += -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,--gc-sections

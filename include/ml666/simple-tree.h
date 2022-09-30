@@ -154,11 +154,11 @@ enum ml666_st_attribute_open_flags {
   X(get_last_child, struct ml666_st_member*, (struct ml666_st_builder* stb, struct ml666_st_children* children), __VA_ARGS__)
 
 
-#define ML666__ST_DECLARATION_SUB(FUNC, _1, _2, PREFIX) ml666_st_cb_ ## FUNC PREFIX ## _ ## FUNC;
+#define ML666__ST_DECLARATION_SUB(FUNC, _1, _2, PREFIX) ML666_EXPORT ml666_st_cb_ ## FUNC PREFIX ## _ ## FUNC;
 #define ML666__ST_IMPLEMENTATION_SUB(X, _1, _2, PREFIX) .X = PREFIX ## _ ## X,
 
 #define ML666_ST_DECLARATION(NAME, PREFIX) \
-  extern const struct ml666_st_cb NAME ## _st_api; \
+  ML666_EXPORT extern const struct ml666_st_cb NAME ## _st_api; \
   ML666_ST_CB(ML666__ST_DECLARATION_SUB, PREFIX)
 
 #define ML666_ST_IMPLEMENTATION(NAME, PREFIX) \

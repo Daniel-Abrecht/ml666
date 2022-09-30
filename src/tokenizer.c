@@ -71,7 +71,7 @@ struct ml666__tokenizer_private {
   enum ml666__state state;
   char* memory; // This is a ring buffer
   bool may_block, eof, spnf, ecsp, disable_utf8_validation;
-  struct streaming_utf8_validator utf8_validator;
+  struct ml666_streaming_utf8_validator utf8_validator;
   uint8_t decode_akku, decode_index;
   union {
     enum ml666__state comment_next_state;
@@ -708,13 +708,13 @@ static bool ml666_tokenizer_d_next(struct ml666_tokenizer* _tokenizer){
         }
         if(result == 0){
           tokenizer->eof = true;
-          if(!utf8_validate(&tokenizer->utf8_validator, EOF)){
+          if(!ml666_utf8_validate(&tokenizer->utf8_validator, EOF)){
             tokenizer->public.error = "the ml666 document must be valid & normalized utf-8!";
             goto error;
           }
         }else if(!tokenizer->disable_utf8_validation){
           for(int i=0; i<result; i++){
-            if(!utf8_validate(&tokenizer->utf8_validator, memory[write_end+i])){
+            if(!ml666_utf8_validate(&tokenizer->utf8_validator, memory[write_end+i])){
               tokenizer->public.error = "the ml666 document must be valid & normalized utf-8!";
               goto error;
             }
