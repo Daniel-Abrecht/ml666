@@ -191,12 +191,12 @@ static bool ml666_st_json_serializer_next(struct ml666_st_serializer* _sts){
             }else{
               sts->encoding = ENC_STRING_BASE64;
             }
+            sts->outptr = outptr;
           } continue;
           case ENC_STRING_UTF8: {
             if(sts->outbuf.length - outptr.length < 1)
               break;
             outptr.data[outptr.length++] = '"';
-            sts->outptr = outptr;
             sts->encoding = ENC_STRING_UTF8_2;
           } /* fallthrough */
           case ENC_STRING_UTF8_2: {
