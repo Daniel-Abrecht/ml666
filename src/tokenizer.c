@@ -88,6 +88,14 @@ const char*const ml666__token_name[] = {
 #undef X
 };
 
+static ml666_tokenizer_cb_next ml666_tokenizer_d_next;
+static ml666_tokenizer_cb_destroy ml666_tokenizer_d_destroy;
+
+static const struct ml666_tokenizer_cb tokenizer_cb = {
+  .next = ml666_tokenizer_d_next,
+  .destroy = ml666_tokenizer_d_destroy,
+};
+
 __attribute__((const))
 static inline unsigned get_ringbuffer_size(void){
   const unsigned sz = sysconf(_SC_PAGESIZE);
@@ -124,6 +132,7 @@ struct ml666_tokenizer* ml666_tokenizer_create_p(struct ml666_tokenizer_create_a
     goto error;
   }
   memset(tokenizer, 0, sizeof(*tokenizer));
+  *(const struct ml666_tokenizer_cb**)&tokenizer->public.cb = &tokenizer_cb;
   tokenizer->fd = args.fd;
   tokenizer->malloc = args.malloc;
   tokenizer->free = args.free;
@@ -218,7 +227,7 @@ static signed char hex2num(char ch){
   return -1;
 }
 
-bool ml666_tokenizer_next(struct ml666_tokenizer* _tokenizer){
+static bool ml666_tokenizer_d_next(struct ml666_tokenizer* _tokenizer){
   struct ml666__tokenizer_private*restrict tokenizer = (struct ml666__tokenizer_private*)_tokenizer;
   tokenizer->public.token = ML666_NONE;
   tokenizer->public.match = (struct ml666_buffer_ro){0};
@@ -786,7 +795,7 @@ final:
   #undef memory_ro
 }
 
-void ml666_tokenizer_destroy(struct ml666_tokenizer* _tokenizer){
+static void ml666_tokenizer_d_destroy(struct ml666_tokenizer* _tokenizer){
   if(!_tokenizer) return;
   const unsigned size = get_ringbuffer_size();
   struct ml666__tokenizer_private*restrict tokenizer = (struct ml666__tokenizer_private*)_tokenizer;

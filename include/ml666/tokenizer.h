@@ -25,12 +25,21 @@ enum ml666_token {
 extern const char*const ml666__token_name[ML666_TOKEN_COUNT];
 
 struct ml666_tokenizer {
+  const struct ml666_tokenizer_cb*const cb;
   enum ml666_token token;
   struct ml666_buffer_ro match;
   bool complete;
   const char* error;
   size_t line, column;
   void* user_ptr;
+};
+
+typedef bool ml666_tokenizer_cb_next(struct ml666_tokenizer* tokenizer);
+typedef void ml666_tokenizer_cb_destroy(struct ml666_tokenizer* tokenizer);
+
+struct ml666_tokenizer_cb {
+  ml666_tokenizer_cb_next* next;
+  ml666_tokenizer_cb_destroy* destroy;
 };
 
 struct ml666_tokenizer_create_args {
@@ -42,7 +51,14 @@ struct ml666_tokenizer_create_args {
 };
 struct ml666_tokenizer* ml666_tokenizer_create_p(struct ml666_tokenizer_create_args args);
 #define ml666_tokenizer_create(...) ml666_tokenizer_create_p((struct ml666_tokenizer_create_args){__VA_ARGS__})
-bool ml666_tokenizer_next(struct ml666_tokenizer* state); // returns false on EOF
-void ml666_tokenizer_destroy(struct ml666_tokenizer* state);
+
+// returns false on EOF
+static inline bool ml666_tokenizer_next(struct ml666_tokenizer* tokenizer){
+  return tokenizer->cb->next(tokenizer);
+}
+
+static inline void ml666_tokenizer_destroy(struct ml666_tokenizer* tokenizer){
+  tokenizer->cb->destroy(tokenizer);
+}
 
 #endif
