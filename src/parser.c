@@ -39,21 +39,21 @@ struct ml666__parser_private {
 static_assert(offsetof(struct ml666__parser_private, public) == 0);
 
 static bool ml666_parser_a_init(struct ml666__parser_private* that){
-  if(that->public.cb->init)
-    return that->public.cb->init(&that->public);
+  if(that->public.api->init)
+    return that->public.api->init(&that->public);
   return true;
 }
 
 static void ml666_parser_a_done(struct ml666__parser_private* that){
-  if(that->public.cb->done)
-    that->public.cb->done(&that->public);
+  if(that->public.api->done)
+    that->public.api->done(&that->public);
   ml666_tokenizer_destroy(that->tokenizer);
   that->tokenizer = 0;
 }
 
 static void ml666_parser_a_cleanup(struct ml666__parser_private* that){
-  if(that->public.cb->cleanup)
-    that->public.cb->cleanup(&that->public);
+  if(that->public.api->cleanup)
+    that->public.api->cleanup(&that->public);
   if(that->tokenizer)
     ml666_tokenizer_destroy(that->tokenizer);
 }
@@ -95,58 +95,66 @@ void ml666_parser__d_mal__attribute_name_free(struct ml666_parser* _that, ml666_
 }
 
 static bool ml666_parser_a_tag_name_append(struct ml666__parser_private* that, ml666_opaque_tag_name* name, struct ml666_buffer_ro data){
-  return that->public.cb->tag_name_append(&that->public, name, data);
+  return that->public.api->tag_name_append(&that->public, name, data);
 }
 
 static void ml666_parser_a_tag_name_free(struct ml666__parser_private* that, ml666_opaque_tag_name name){
-  if(that->public.cb->tag_name_free)
-    that->public.cb->tag_name_free(&that->public, name);
+  if(that->public.api->tag_name_free)
+    that->public.api->tag_name_free(&that->public, name);
 }
 
 static bool ml666_parser_a_attribute_name_append(struct ml666__parser_private* that, ml666_opaque_attribute_name* name, struct ml666_buffer_ro data){
-  return that->public.cb->attribute_name_append(&that->public, name, data);
+  return that->public.api->attribute_name_append(&that->public, name, data);
 }
 
 static void ml666_parser_a_attribute_name_free(struct ml666__parser_private* that, ml666_opaque_attribute_name name){
-  if(that->public.cb->attribute_name_free)
-    that->public.cb->attribute_name_free(&that->public, name);
+  if(that->public.api->attribute_name_free)
+    that->public.api->attribute_name_free(&that->public, name);
 }
 
 static bool ml666_parser_a_tag_push(struct ml666__parser_private* that, ml666_opaque_tag_name* name){
-  return that->public.cb->tag_push(&that->public, name);
+  return that->public.api->tag_push(&that->public, name);
 }
 
 static bool ml666_parser_a_end_tag_check(struct ml666__parser_private* that, ml666_opaque_tag_name name){
-  return that->public.cb->end_tag_check(&that->public, name);
+  return that->public.api->end_tag_check(&that->public, name);
 }
 
 static bool ml666_parser_a_tag_pop(struct ml666__parser_private* that){
-  return that->public.cb->tag_pop(&that->public);
+  return that->public.api->tag_pop(&that->public);
 }
 
 static bool ml666_parser_a_set_attribute(struct ml666__parser_private* that, ml666_opaque_attribute_name* name){
-  if(that->public.cb->set_attribute)
-    return that->public.cb->set_attribute(&that->public, name);
+  if(that->public.api->set_attribute)
+    return that->public.api->set_attribute(&that->public, name);
   return true;
 }
 
 static bool ml666_parser_a_data_append(struct ml666__parser_private* that, struct ml666_buffer_ro data){
-  if(that->public.cb->data_append)
-    return that->public.cb->data_append(&that->public, data);
+  if(that->public.api->data_append)
+    return that->public.api->data_append(&that->public, data);
   return true;
 }
 
 static bool ml666_parser_a_value_append(struct ml666__parser_private* that, struct ml666_buffer_ro data){
-  if(that->public.cb->value_append)
-    return that->public.cb->value_append(&that->public, data);
+  if(that->public.api->value_append)
+    return that->public.api->value_append(&that->public, data);
   return true;
 }
 
 static bool ml666_parser_a_comment_append(struct ml666__parser_private* that, struct ml666_buffer_ro data){
-  if(that->public.cb->comment_append)
-    return that->public.cb->comment_append(&that->public, data);
+  if(that->public.api->comment_append)
+    return that->public.api->comment_append(&that->public, data);
   return true;
 }
+
+static ml666_parser_cb_next ml666_parser_d_next;
+static ml666_parser_cb_destroy ml666_parser_d_destroy;
+
+static const struct ml666_parser_cb parser_cb = {
+  .next = ml666_parser_d_next,
+  .destroy = ml666_parser_d_destroy,
+};
 
 struct ml666_parser* ml666_parser_create_p(struct ml666_parser_create_args args){
   bool fail = false;
@@ -154,27 +162,27 @@ struct ml666_parser* ml666_parser_create_p(struct ml666_parser_create_args args)
     fprintf(stderr, "ml666_parser_create_p: invalid fd arguent\n");
     fail = true;
   }
-  if(!args.cb){
+  if(!args.api){
     fprintf(stderr, "ml666_parser_create_p: argument cb must be set\n");
     fail = true;
   }else{
-    if(!args.cb->attribute_name_append){
+    if(!args.api->attribute_name_append){
       fprintf(stderr, "ml666_parser_create_p: callback attribute_name_append is mandatory\n");
       fail = true;
     }
-    if(!args.cb->tag_name_append){
+    if(!args.api->tag_name_append){
       fprintf(stderr, "ml666_parser_create_p: callback tag_name_append is mandatory\n");
       fail = true;
     }
-    if(!args.cb->tag_push){
+    if(!args.api->tag_push){
       fprintf(stderr, "ml666_parser_create_p: callback tag_push is mandatory\n");
       fail = true;
     }
-    if(!args.cb->end_tag_check){
+    if(!args.api->end_tag_check){
       fprintf(stderr, "ml666_parser_create_p: callback end_tag_check is mandatory\n");
       fail = true;
     }
-    if(!args.cb->tag_pop){
+    if(!args.api->tag_pop){
       fprintf(stderr, "ml666_parser_create_p: callback tag_pop is mandatory\n");
       fail = true;
     }
@@ -193,7 +201,8 @@ struct ml666_parser* ml666_parser_create_p(struct ml666_parser_create_args args)
     goto error;
   }
   memset(parser, 0, sizeof(*parser));
-  *(const struct ml666_parser_cb**)&parser->public.cb = args.cb;
+  *(const struct ml666_parser_cb**)&parser->public.cb = &parser_cb;
+  *(const struct ml666_parser_api**)&parser->public.api = args.api;
   parser->public.user_ptr = args.user_ptr;
   parser->malloc = args.malloc;
   parser->realloc = args.realloc;
@@ -216,7 +225,7 @@ error:
   return 0;
 }
 
-bool ml666_parser_next(struct ml666_parser* _parser){
+static bool ml666_parser_d_next(struct ml666_parser* _parser){
   struct ml666__parser_private*restrict parser = (struct ml666__parser_private*)_parser;
   if(!parser->tokenizer || parser->tokenizer->token == ML666_EOF)
     return false;
@@ -337,7 +346,7 @@ bool ml666_parser_next(struct ml666_parser* _parser){
   }
 }
 
-void ml666_parser_destroy(struct ml666_parser* _parser){
+static void ml666_parser_d_destroy(struct ml666_parser* _parser){
   struct ml666__parser_private* parser = (struct ml666__parser_private*)_parser;
   ml666_parser_a_cleanup(parser);
   parser->free(parser->public.user_ptr, parser);

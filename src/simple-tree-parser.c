@@ -176,7 +176,7 @@ bool value_append(struct ml666_parser* parser, struct ml666_buffer_ro data){
 }
 
 
-static const struct ml666_parser_cb callbacks = {
+static const struct ml666_parser_api callbacks = {
   .tag_name_append       = ml666_parser__d_mal__tag_name_append,
   .tag_name_free         = ml666_parser__d_mal__tag_name_free,
   .attribute_name_append = ml666_parser__d_mal__attribute_name_append,
@@ -217,7 +217,7 @@ struct ml666_simple_tree_parser* ml666_simple_tree_parser_create_p(struct ml666_
   stp->free = args.free;
   stp->parser = ml666_parser_create(
     .fd = 0,
-    .cb = &callbacks,
+    .api = &callbacks,
     .user_ptr = stp
   );
   if(!stp->parser){
