@@ -6,10 +6,21 @@
 #include <stdio.h>
 
 struct ml666_simple_tree_parser {
+  const struct ml666_simple_tree_parser_cb*const cb;
   struct ml666_st_builder*const stb;
   size_t line, column;
   const char* error;
   void* user_ptr;
+};
+
+typedef void ml666_simple_tree_parser_cb_destroy(struct ml666_simple_tree_parser* stp);
+typedef bool ml666_simple_tree_parser_cb_next(struct ml666_simple_tree_parser* stp);
+typedef struct ml666_st_document* ml666_simple_tree_parser_cb_take_document(struct ml666_simple_tree_parser* stp);
+
+struct ml666_simple_tree_parser_cb {
+  ml666_simple_tree_parser_cb_destroy* destroy;
+  ml666_simple_tree_parser_cb_next* next;
+  ml666_simple_tree_parser_cb_take_document* take_document;
 };
 
 struct ml666_simple_tree_parser_create_args {
@@ -23,9 +34,18 @@ struct ml666_simple_tree_parser_create_args {
 
 struct ml666_simple_tree_parser* ml666_simple_tree_parser_create_p(struct ml666_simple_tree_parser_create_args args);
 #define ml666_simple_tree_parser_create(...) ml666_simple_tree_parser_create_p((struct ml666_simple_tree_parser_create_args){__VA_ARGS__})
-void ml666_simple_tree_parser_destroy(struct ml666_simple_tree_parser* stp);
-bool ml666_simple_tree_parser_next(struct ml666_simple_tree_parser* stp);
-struct ml666_st_document* ml666_simple_tree_parser_take_document(struct ml666_simple_tree_parser* stp);
+
+static inline void ml666_simple_tree_parser_destroy(struct ml666_simple_tree_parser* stp){
+  stp->cb->destroy(stp);
+}
+
+static inline bool ml666_simple_tree_parser_next(struct ml666_simple_tree_parser* stp){
+  return stp->cb->next(stp);
+}
+
+static inline struct ml666_st_document* ml666_simple_tree_parser_take_document(struct ml666_simple_tree_parser* stp){
+  return stp->cb->take_document(stp);
+}
 
 // This is merely a convenience function for the simplest of use cases
 #define ml666_st_parse(...) ml666_st_parse_p((struct ml666_simple_tree_parser_create_args){__VA_ARGS__})

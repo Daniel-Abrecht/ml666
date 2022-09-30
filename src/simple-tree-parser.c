@@ -175,6 +175,15 @@ bool value_append(struct ml666_parser* parser, struct ml666_buffer_ro data){
   return ml666_st_attribute_set_value(stp->public.stb, stp->current_attribute, &buf);
 }
 
+static ml666_simple_tree_parser_cb_destroy ml666_simple_tree_parser_d_destroy;
+static ml666_simple_tree_parser_cb_next ml666_simple_tree_parser_d_next;
+static ml666_simple_tree_parser_cb_take_document ml666_simple_tree_parser_d_take_document;
+
+static const struct ml666_simple_tree_parser_cb simple_tree_parser_cb = {
+  .destroy = ml666_simple_tree_parser_d_destroy,
+  .next = ml666_simple_tree_parser_d_next,
+  .take_document = ml666_simple_tree_parser_d_take_document,
+};
 
 static const struct ml666_parser_api callbacks = {
   .tag_name_append       = ml666_parser__d_mal__tag_name_append,
@@ -210,6 +219,7 @@ struct ml666_simple_tree_parser* ml666_simple_tree_parser_create_p(struct ml666_
     return false;
   }
   memset(stp, 0, sizeof(*stp));
+  *(const struct ml666_simple_tree_parser_cb**)&stp->public.cb = &simple_tree_parser_cb;
   *(struct ml666_st_builder**)&stp->public.stb = args.stb;
   stp->public.user_ptr = args.user_ptr;
   stp->malloc = args.malloc;
@@ -235,7 +245,7 @@ struct ml666_simple_tree_parser* ml666_simple_tree_parser_create_p(struct ml666_
   return &stp->public;
 }
 
-void ml666_simple_tree_parser_destroy(struct ml666_simple_tree_parser* _stp){
+static void ml666_simple_tree_parser_d_destroy(struct ml666_simple_tree_parser* _stp){
   struct ml666_simple_tree_parser_default* stp = (struct ml666_simple_tree_parser_default*)_stp;
   ml666_st_node_ref_set(stp->public.stb, &stp->cur, 0);
   if(stp->document){
@@ -248,7 +258,7 @@ void ml666_simple_tree_parser_destroy(struct ml666_simple_tree_parser* _stp){
   stp->free(stp->public.user_ptr, stp);
 }
 
-bool ml666_simple_tree_parser_next(struct ml666_simple_tree_parser* _stp){
+static bool ml666_simple_tree_parser_d_next(struct ml666_simple_tree_parser* _stp){
   struct ml666_simple_tree_parser_default* stp = (struct ml666_simple_tree_parser_default*)_stp;
   if(!stp->parser)
     return false;
@@ -261,7 +271,7 @@ bool ml666_simple_tree_parser_next(struct ml666_simple_tree_parser* _stp){
 }
 
 
-struct ml666_st_document* ml666_simple_tree_parser_take_document(struct ml666_simple_tree_parser* _stp){
+static struct ml666_st_document* ml666_simple_tree_parser_d_take_document(struct ml666_simple_tree_parser* _stp){
   struct ml666_simple_tree_parser_default* stp = (struct ml666_simple_tree_parser_default*)_stp;
   struct ml666_st_document* document = stp->document;
   stp->document = 0;
