@@ -517,9 +517,8 @@ static bool ml666_st_json_serializer_next(struct ml666_st_serializer* _sts){
           sts->state = SERIALIZER_W_NEXT_MEMBER;
         } break;
         case SERIALIZER_W_COMMENT_START: {
-          sts->spaces = sts->level * 2;
-            if(!++sts->level)
-              sts->level = ~0;
+          if(!++sts->level)
+            sts->level = ~0;
           sts->data.length = 2;
           sts->data.data = "{\n";
           sts->state = SERIALIZER_W_COMMENT_START_2;
