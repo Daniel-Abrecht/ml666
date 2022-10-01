@@ -10,6 +10,7 @@
 #define SERIALIZER_STATE \
   X(SERIALIZER_W_START) \
   X(SERIALIZER_W_DONE) \
+  X(SERIALIZER_W_FINAL_NEWLINE) \
   X(SERIALIZER_W_NEXT_CHILD) \
   X(SERIALIZER_W_NEXT_MEMBER) \
   X(SERIALIZER_W_TAG_START) \
@@ -330,7 +331,7 @@ static bool ml666_st_json_serializer_next(struct ml666_st_serializer* _sts){
       switch(sts->state){
         case SERIALIZER_W_DONE: break;
         case SERIALIZER_W_START: switch(ML666_ST_TYPE(sts->cur)){
-          case ML666_ST_NT_DOCUMENT: sts->state = SERIALIZER_W_CHILDREN_3; break;
+          case ML666_ST_NT_DOCUMENT: sts->state = SERIALIZER_W_TAG_START; break;
           case ML666_ST_NT_ELEMENT : sts->state = SERIALIZER_W_TAG_START; break;
           case ML666_ST_NT_CONTENT : sts->state = SERIALIZER_W_CONTENT; break;
           case ML666_ST_NT_COMMENT : sts->state = SERIALIZER_W_COMMENT_START; break;
@@ -346,7 +347,7 @@ static bool ml666_st_json_serializer_next(struct ml666_st_serializer* _sts){
           }
         } break;
         case SERIALIZER_W_NEXT_MEMBER: {
-          sts->state = SERIALIZER_W_DONE;
+          sts->state = SERIALIZER_W_FINAL_NEWLINE;
           if(sts->cur == sts->node)
             break;
           struct ml666_st_member* member = ML666_ST_U_MEMBER(sts->cur);
@@ -364,6 +365,11 @@ static bool ml666_st_json_serializer_next(struct ml666_st_serializer* _sts){
             }
           }
         } break;
+        case SERIALIZER_W_FINAL_NEWLINE: {
+          sts->data.data = "\n";
+          sts->data.length = 1;
+          sts->state = SERIALIZER_W_DONE;
+        } break;
         case SERIALIZER_W_TAG_START: {
           sts->level += 1;
           sts->data.data = "{\n";
@@ -372,9 +378,15 @@ static bool ml666_st_json_serializer_next(struct ml666_st_serializer* _sts){
         } break;
         case SERIALIZER_W_TAG_START_2: {
           sts->spaces = sts->level * 2;
-          sts->data.data = "\"type\": \"element\",\n";
-          sts->data.length = 19;
-          sts->state = SERIALIZER_W_TAG_1;
+          if(ML666_ST_TYPE(sts->cur) == ML666_ST_NT_DOCUMENT){
+            sts->data.data = "\"type\": \"document\",\n";
+            sts->data.length = 20;
+            sts->state = SERIALIZER_W_CHILDREN_2;
+          }else{
+            sts->data.data = "\"type\": \"element\",\n";
+            sts->data.length = 19;
+            sts->state = SERIALIZER_W_TAG_1;
+          }
         } break;
         case SERIALIZER_W_TAG_1: {
           sts->spaces = sts->level * 2;
@@ -488,11 +500,7 @@ static bool ml666_st_json_serializer_next(struct ml666_st_serializer* _sts){
           sts->spaces = sts->level * 2;
           sts->data.data = "]\n";
           sts->data.length = 2;
-          if(ML666_ST_TYPE(sts->cur) == ML666_ST_NT_ELEMENT){
-            sts->state = SERIALIZER_W_END_TAG;
-          }else{
-            sts->state = SERIALIZER_W_DONE;
-          }
+          sts->state = SERIALIZER_W_END_TAG;
         } break;
         case SERIALIZER_W_END_TAG: {
           sts->data.data = "}";
