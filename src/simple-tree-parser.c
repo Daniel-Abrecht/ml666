@@ -202,9 +202,11 @@ static const struct ml666_parser_api callbacks = {
   .tag_pop = tag_pop,
 };
 
+// FIXME: Free parser on error
 struct ml666_simple_tree_parser* ml666_simple_tree_parser_create_p(struct ml666_simple_tree_parser_create_args args){
   if(!args.stb){
     fprintf(stderr, "ml666_simple_tree_parser_create_p: mandatory argument \"stb\" not set!\n");
+    if(args.parser) ml666_parser_destroy(args.parser);
     return false;
   }
   if(!args.malloc)
@@ -216,6 +218,7 @@ struct ml666_simple_tree_parser* ml666_simple_tree_parser_create_p(struct ml666_
   struct ml666_simple_tree_parser_default* stp = args.malloc(args.user_ptr, sizeof(*stp));
   if(!stp){
     fprintf(stderr, "malloc failed");
+    if(args.parser) ml666_parser_destroy(args.parser);
     return false;
   }
   memset(stp, 0, sizeof(*stp));
@@ -225,17 +228,22 @@ struct ml666_simple_tree_parser* ml666_simple_tree_parser_create_p(struct ml666_
   stp->malloc = args.malloc;
   stp->realloc = args.realloc;
   stp->free = args.free;
-  stp->parser = ml666_parser_create(
-    .fd = 0,
-    .api = &callbacks,
-    .user_ptr = stp
-  );
-  if(!stp->parser){
-    fprintf(stderr, "ml666_parser_create failed\n");
-    return false;
+  if(args.parser){
+    stp->parser = args.parser;
+  }else{
+    stp->parser = ml666_parser_create(
+      .fd = 0,
+      .api = &callbacks,
+      .user_ptr = stp
+    );
+    if(!stp->parser){
+      fprintf(stderr, "ml666_parser_create failed\n");
+      return false;
+    }
   }
   struct ml666_st_document* document = ml666_st_document_create(stp->public.stb);
   if(!document){
+    if(stp->parser) ml666_parser_destroy(stp->parser);
     args.free(args.user_ptr, stp);
     fprintf(stderr, "ml666_st_document_create failed\n");
     return false;

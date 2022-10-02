@@ -26,10 +26,12 @@ struct ml666_simple_tree_parser_cb {
 struct ml666_simple_tree_parser_create_args {
   int fd;
   struct ml666_st_builder* stb;
+  // Optional
   void* user_ptr;
   ml666__cb__malloc*  malloc;
   ml666__cb__realloc* realloc;
   ml666__cb__free*    free;
+  struct ml666_parser* parser; // Will be freed by simple tree parser if set
 };
 
 ML666_EXPORT struct ml666_simple_tree_parser* ml666_simple_tree_parser_create_p(struct ml666_simple_tree_parser_create_args args);
