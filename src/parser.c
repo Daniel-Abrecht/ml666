@@ -215,11 +215,9 @@ struct ml666_parser* ml666_parser_create_p(struct ml666_parser_create_args args)
   parser->tokenizer = args.tokenizer;
   args.fd = -1;
   if(!ml666_parser_a_init(parser))
-    goto error_after_tokenizer;
+    goto error_after_calloc;
   return &parser->public;
 
-error_after_tokenizer:
-  ml666_tokenizer_destroy(parser->tokenizer);
 error_after_calloc:
   args.free(args.user_ptr, parser);
 error:
