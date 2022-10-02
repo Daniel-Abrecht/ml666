@@ -207,10 +207,13 @@ struct ml666_parser* ml666_parser_create_p(struct ml666_parser_create_args args)
   parser->malloc = args.malloc;
   parser->realloc = args.realloc;
   parser->free = args.free;
-  parser->tokenizer = ml666_tokenizer_create(args.fd, .user_ptr=0, .malloc=args.malloc, .free=args.free);
+  if(!args.tokenizer){
+    args.tokenizer = ml666_tokenizer_create(args.fd, .user_ptr=0, .malloc=args.malloc, .free=args.free);
+    if(!args.tokenizer)
+      goto error_after_calloc;
+  }
+  parser->tokenizer = args.tokenizer;
   args.fd = -1;
-  if(!parser->tokenizer)
-    goto error_after_calloc;
   if(!ml666_parser_a_init(parser))
     goto error_after_tokenizer;
   return &parser->public;
@@ -222,6 +225,8 @@ error_after_calloc:
 error:
   if(args.fd >= 0)
     close(args.fd);
+  if(args.tokenizer)
+    ml666_tokenizer_destroy(args.tokenizer);
   return 0;
 }
 
