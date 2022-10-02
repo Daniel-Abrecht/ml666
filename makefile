@@ -82,10 +82,12 @@ clean:
 
 install:
 	cp "lib/$(TYPE)/lib$(SONAME).so" "$(DESTDIR)$(prefix)/lib/lib$(SONAME).so.$(MAJOR).$(MINOR).$(PATCH)"
-	cp "bin/$(TYPE)/ml666" "$(DESTDIR)$(prefix)/bin/ml666"
 	ln -sf "lib$(SONAME).so.$(MAJOR).$(MINOR).$(PATCH)" "$(DESTDIR)$(prefix)/lib/lib$(SONAME).so.$(MAJOR).$(MINOR)"
 	ln -sf "lib$(SONAME).so.$(MAJOR).$(MINOR).$(PATCH)" "$(DESTDIR)$(prefix)/lib/lib$(SONAME).so.$(MAJOR)"
 	ln -sf "lib$(SONAME).so.$(MAJOR).$(MINOR).$(PATCH)" "$(DESTDIR)$(prefix)/lib/lib$(SONAME).so"
+	cp "bin/$(TYPE)/ml666" "$(DESTDIR)$(prefix)/bin/ml666"
+	cp "lib/$(TYPE)/lib$(SONAME).a" "$(DESTDIR)$(prefix)/lib/lib$(SONAME).a"
+	cp -a include/ml666/./ "$(DESTDIR)$(prefix)/include/ml666/"
 	ldconfig
 
 uninstall:
@@ -93,6 +95,9 @@ uninstall:
 	rm -f "$(DESTDIR)$(prefix)/lib/lib$(SONAME).so.$(MAJOR).$(MINOR)"
 	rm -f "$(DESTDIR)$(prefix)/lib/lib$(SONAME).so.$(MAJOR)"
 	rm -f "$(DESTDIR)$(prefix)/lib/lib$(SONAME).so"
+	rm -f "$(DESTDIR)$(prefix)/lib/lib$(SONAME).a"
+	rm -f "$(DESTDIR)$(prefix)/bin/ml666"
+	rm -rf "$(DESTDIR)$(prefix)/include/ml666/"
 
 shell:
 	PROMPT_COMMAND='if [ -z "$$PS_SET" ]; then PS_SET=1; PS1="(ml666) $$PS1"; fi' \
