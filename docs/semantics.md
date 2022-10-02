@@ -4,9 +4,10 @@ This is about the format and how tokenizers & parsers are to treat it in general
 provided in this repo, see [ml666.md](ml666.md).
 
 The formal syntax assumes each character is an 8 bit byte. For the values of characters in the ABNF syntax, ASCII is used.
-However, the encoded ml666 document itself must be valid, normalized utf-8 data without any utf-16 surrogates or BOMs,
+However, the encoded ml666 document itself must be valid, normalized utf-8 data without any utf-16 surrogates,
 and without any noncharacter codepoints, with the exception of the optional (and *not* recommended) utf8 BOM.
-Any program reading an ml666 document must validate that the document meets these criteria.
+If an unescaped UTF-8 BOM appears inside any token, it is considered part of the UTF-8 encoded document itself,
+instead of as part of the token. Any program reading an ml666 document must validate that the document meets these criteria.
 Only a certain amount of UTF-8 code pages are currently used, so there exist valid UTF-8 sequences for not yet valid
 unicode characters. A parser may or may not reject those. If it does, it needs to be updated when more unicode codepoints
 become valid. A serializer must always escape such sequences, to ensure all parsers will the ml666 document.
