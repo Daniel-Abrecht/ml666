@@ -10,42 +10,31 @@
 #include <ml666/tokenizer.h>
 #include <ml666/utils.h>
 
-#define ML666__STATE \
-  X(ML666__STATE_EOF) \
-  X(ML666__STATE_TEXT) \
-  X(ML666__STATE_TEXT_EXPECT_QUOTE) \
-  X(ML666__STATE_TEXT_FIRST_NEWLINE) \
-  X(ML666__STATE_COMMENT_START) \
-  X(ML666__STATE_COMMENT_FIRST_NEWLINE) \
-  X(ML666__STATE_COMMENT) \
-  X(ML666__STATE_COMMENT_END_PRE) \
-  X(ML666__STATE_COMMENT_END) \
-  X(ML666__STATE_COMMENT_LINE_START) \
-  X(ML666__STATE_COMMENT_LINE) \
-  X(ML666__STATE_SELF_CLOSE) \
-  X(ML666__STATE_TAG_OR_END) \
-  X(ML666__STATE_MEMBER) \
-  X(ML666__STATE_TAG) \
-  X(ML666__STATE_END_TAG) \
-  X(ML666__STATE_ATTRIBUTE) \
-  X(ML666__STATE_ATTRIBUTE_START) \
-  X(ML666__STATE_ATTRIBUTE_VALUE) \
-  X(ML666__STATE_ATTRIBUTE_VALUE_TEXT) \
-  X(ML666__STATE_ATTRIBUTE_VALUE_FIRST_NEWLINE) \
-  X(ML666__STATE_ATTRIBUTE_VALUE_TEXT_EXPECT_QUOTE) \
-  X(ML666__STATE_EXPECT_LT)
 enum ml666__state {
-#define X(Y) Y,
-  ML666__STATE
-#undef X
+  ML666__STATE_TEXT,
+  ML666__STATE_TEXT_EXPECT_QUOTE,
+  ML666__STATE_TEXT_FIRST_NEWLINE,
+  ML666__STATE_COMMENT_START,
+  ML666__STATE_COMMENT_FIRST_NEWLINE,
+  ML666__STATE_COMMENT,
+  ML666__STATE_COMMENT_END_PRE,
+  ML666__STATE_COMMENT_END,
+  ML666__STATE_COMMENT_LINE_START,
+  ML666__STATE_COMMENT_LINE,
+  ML666__STATE_SELF_CLOSE,
+  ML666__STATE_TAG_OR_END,
+  ML666__STATE_MEMBER,
+  ML666__STATE_TAG,
+  ML666__STATE_END_TAG,
+  ML666__STATE_ATTRIBUTE,
+  ML666__STATE_ATTRIBUTE_START,
+  ML666__STATE_ATTRIBUTE_VALUE,
+  ML666__STATE_ATTRIBUTE_VALUE_TEXT,
+  ML666__STATE_ATTRIBUTE_VALUE_FIRST_NEWLINE,
+  ML666__STATE_ATTRIBUTE_VALUE_TEXT_EXPECT_QUOTE,
+  ML666__STATE_EXPECT_LT,
   ML666__STATE_COUNT
 };
-const char*const ml666__state_name[] = {
-#define X(Y) #Y,
-  ML666__STATE
-#undef X
-};
-#undef ML666__STATE
 
 static const enum ml666_token ml666__state_token_map[ML666__STATE_COUNT] = {
   [ML666__STATE_TAG] = ML666_TAG,
@@ -136,6 +125,7 @@ struct ml666_tokenizer* ml666_tokenizer_create_p(struct ml666_tokenizer_create_a
   tokenizer->fd = args.fd;
   tokenizer->malloc = args.malloc;
   tokenizer->free = args.free;
+  tokenizer->disable_utf8_validation = args.disable_utf8_validation;
   tokenizer->public.user_ptr = args.user_ptr;
   tokenizer->public.line = 1;
   tokenizer->public.column = 1;
@@ -236,9 +226,9 @@ static bool ml666_tokenizer_d_next(struct ml666_tokenizer* _tokenizer){
   size_t line = tokenizer->public.line;
   size_t column = tokenizer->public.column;
 
+  const int fd = tokenizer->fd;
+  if(fd == -1) return false;
   enum ml666__state state = tokenizer->state;
-  if(state == ML666__STATE_EOF)
-    return false;
   if(state >= ML666__STATE_COUNT || state < 0){
     tokenizer->public.error = "Invalid state";
     goto error;
@@ -246,7 +236,6 @@ static bool ml666_tokenizer_d_next(struct ml666_tokenizer* _tokenizer){
 
   char*restrict memory = tokenizer->memory;
 #define memory_ro (memory+size*2)
-  const int fd = tokenizer->fd;
   unsigned offset = tokenizer->offset;
   unsigned index = tokenizer->index;
   unsigned length = tokenizer->length;
@@ -412,7 +401,6 @@ static bool ml666_tokenizer_d_next(struct ml666_tokenizer* _tokenizer){
 
       if(!ecsp)
       switch(state){
-        case ML666__STATE_EOF: abort();
         case ML666__STATE_MEMBER: {
           if(!space)
           switch(ch){

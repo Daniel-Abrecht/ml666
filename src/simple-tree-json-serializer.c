@@ -7,46 +7,29 @@
 #include <errno.h>
 #include <sys/mman.h>
 
-#define SERIALIZER_STATE \
-  X(SERIALIZER_W_START) \
-  X(SERIALIZER_W_DONE) \
-  X(SERIALIZER_W_FINAL_NEWLINE) \
-  X(SERIALIZER_W_NEXT_CHILD) \
-  X(SERIALIZER_W_NEXT_MEMBER) \
-  X(SERIALIZER_W_TAG_START) \
-  X(SERIALIZER_W_TAG_START_2) \
-  X(SERIALIZER_W_TAG_1) \
-  X(SERIALIZER_W_TAG_2) \
-  X(SERIALIZER_W_ATTRIBUTE_LIST_START) \
-  X(SERIALIZER_W_ATTRIBUTE_LIST_START_2) \
-  X(SERIALIZER_W_ATTRIBUTE_NAME) \
-  X(SERIALIZER_W_ATTRIBUTE_VALUE_START) \
-  X(SERIALIZER_W_ATTRIBUTE_VALUE) \
-  X(SERIALIZER_W_ATTRIBUTE_NEXT) \
-  X(SERIALIZER_W_ATTRIBUTE_LIST_END) \
-  X(SERIALIZER_W_CHILDREN_1) \
-  X(SERIALIZER_W_CHILDREN_2) \
-  X(SERIALIZER_W_CHILDREN_3) \
-  X(SERIALIZER_W_CHILDREN_4) \
-  X(SERIALIZER_W_END_CHILDLIST) \
-  X(SERIALIZER_W_END_CHILDLIST_2) \
-  X(SERIALIZER_W_END_TAG) \
-  X(SERIALIZER_W_CONTENT) \
-  X(SERIALIZER_W_COMMENT_START) \
-  X(SERIALIZER_W_COMMENT_START_2) \
-  X(SERIALIZER_W_COMMENT_START_3) \
-  X(SERIALIZER_W_COMMENT) \
-  X(SERIALIZER_W_COMMENT_END)
-
 enum serializer_state {
-#define X(Y) Y,
-  SERIALIZER_STATE
-#undef X
-};
-static const char*const serializer_state_name[] = {
-#define X(Y) #Y,
-  SERIALIZER_STATE
-#undef X
+  SERIALIZER_W_START,
+  SERIALIZER_W_DONE,
+  SERIALIZER_W_FINAL_NEWLINE,
+  SERIALIZER_W_NEXT_CHILD,
+  SERIALIZER_W_NEXT_MEMBER,
+  SERIALIZER_W_TAG_START,
+  SERIALIZER_W_TAG,
+  SERIALIZER_W_ATTRIBUTE_LIST_START,
+  SERIALIZER_W_ATTRIBUTE_START,
+  SERIALIZER_W_ATTRIBUTE_NAME,
+  SERIALIZER_W_ATTRIBUTE_VALUE_START,
+  SERIALIZER_W_ATTRIBUTE_VALUE,
+  SERIALIZER_W_ATTRIBUTE_NEXT,
+  SERIALIZER_W_ATTRIBUTE_LIST_END,
+  SERIALIZER_W_CHILDREN_1,
+  SERIALIZER_W_CHILDREN_2,
+  SERIALIZER_W_END_CHILDLIST,
+  SERIALIZER_W_END_CHILDLIST_2,
+  SERIALIZER_W_CONTENT,
+  SERIALIZER_W_COMMENT_START,
+  SERIALIZER_W_COMMENT,
+  SERIALIZER_W_COMMENT_END,
 };
 
 enum data_encoding {
@@ -73,6 +56,8 @@ struct ml666_st_serializer_private {
   struct ml666_buffer_ro data;
   struct ml666_buffer outbuf;
   struct ml666_buffer outptr;
+
+  bool has_attribute, has_children;
 
   ml666__cb__malloc* malloc;
   ml666__cb__free*   free;
@@ -326,8 +311,6 @@ static bool ml666_st_json_serializer_next(struct ml666_st_serializer* _sts){
       sts->outptr = outptr;
     }
     if(!sts->data.length){
-      (void)serializer_state_name;
-//       printf("%s\n", serializer_state_name[sts->state]); fflush(stdout);
       switch(sts->state){
         case SERIALIZER_W_DONE: break;
         case SERIALIZER_W_START: switch(ML666_ST_TYPE(sts->cur)){
@@ -354,7 +337,7 @@ static bool ml666_st_json_serializer_next(struct ml666_st_serializer* _sts){
           struct ml666_st_member* next_child = member ? ml666_st_member_get_next(sts->public.stb, member) : 0;
           if(next_child){
             sts->data.data = ", \n";
-            sts->data.length = ML666_ST_TYPE(next_child) == ML666_ST_NT_CONTENT ? 3 : 2;
+            sts->data.length = 3;
             sts->cur = ML666_ST_NODE(next_child);
             sts->state = SERIALIZER_W_START;
           }else if(member){
@@ -371,60 +354,54 @@ static bool ml666_st_json_serializer_next(struct ml666_st_serializer* _sts){
           sts->state = SERIALIZER_W_DONE;
         } break;
         case SERIALIZER_W_TAG_START: {
-          sts->level += 1;
-          sts->data.data = "{\n";
-          sts->data.length = 2;
-          sts->state = SERIALIZER_W_TAG_START_2;
-        } break;
-        case SERIALIZER_W_TAG_START_2: {
           sts->spaces = sts->level * 2;
           if(ML666_ST_TYPE(sts->cur) == ML666_ST_NT_DOCUMENT){
-            sts->data.data = "\"type\": \"document\",\n";
-            sts->data.length = 20;
-            sts->state = SERIALIZER_W_CHILDREN_2;
+            sts->data.data = "[\"D\"";
+            sts->data.length = 4;
+            sts->state = SERIALIZER_W_CHILDREN_1;
           }else{
-            sts->data.data = "\"type\": \"element\",\n";
-            sts->data.length = 19;
-            sts->state = SERIALIZER_W_TAG_1;
+            sts->data.data = "[\"E\", ";
+            sts->data.length = 6;
+            sts->state = SERIALIZER_W_TAG;
           }
         } break;
-        case SERIALIZER_W_TAG_1: {
-          sts->spaces = sts->level * 2;
-          sts->data.data = "\"name\": ";
-          sts->data.length = 8;
-          sts->state = SERIALIZER_W_TAG_2;
-        } break;
-        case SERIALIZER_W_TAG_2: {
+        case SERIALIZER_W_TAG: {
           sts->encoding = ENC_STRING;
           struct ml666_st_element* element = ML666_ST_U_ELEMENT(sts->cur);
+          sts->current_attribute = ml666_st_attribute_get_first(sts->public.stb, element);
+          sts->has_attribute = !!sts->current_attribute;
+          sts->has_children = !!ml666_st_get_first_child(sts->public.stb, ML666_ST_U_CHILDREN(sts->public.stb, sts->cur));
           sts->data = ml666_hashed_buffer_set__peek(ml666_st_element_get_name(sts->public.stb, element))->buffer;
-          if((sts->current_attribute = ml666_st_attribute_get_first(sts->public.stb, element))){
-            sts->state = SERIALIZER_W_ATTRIBUTE_LIST_START;
-          }else{
-            sts->state = SERIALIZER_W_CHILDREN_1;
-          }
+          sts->state = SERIALIZER_W_ATTRIBUTE_LIST_START;
+          if(sts->has_children && sts->has_attribute)
+            if(!++sts->level)
+              sts->level = ~0;
         } break;
         case SERIALIZER_W_ATTRIBUTE_LIST_START: {
-          sts->state = SERIALIZER_W_ATTRIBUTE_LIST_START_2;
-          sts->data.data = ",\n";
-          sts->data.length = 2;
+          if(sts->current_attribute){
+            sts->data.data = ", [\n";
+            sts->state = SERIALIZER_W_ATTRIBUTE_START;
+            if(!++sts->level)
+              sts->level = ~0;
+          }else{
+            sts->state = SERIALIZER_W_CHILDREN_1;
+            sts->data.data = ", []";
+          }
+          sts->data.length = 4;
         } break;
-        case SERIALIZER_W_ATTRIBUTE_LIST_START_2: {
-          sts->spaces = sts->level * 2;
-          if(!++sts->level)
-            sts->level = ~0;
-          sts->data.data = "\"attribute\": {\n";
-          sts->data.length = 15;
+        case SERIALIZER_W_ATTRIBUTE_START: {
           sts->state = SERIALIZER_W_ATTRIBUTE_NAME;
+          sts->data.data = "[";
+          sts->data.length = 1;
+          sts->spaces = sts->level * 2;
         } break;
         case SERIALIZER_W_ATTRIBUTE_NAME: {
-          sts->spaces = sts->level * 2;
           sts->encoding = ENC_STRING_UTF8;
           sts->data = ml666_st_attribute_get_name(sts->public.stb, sts->current_attribute)->buffer;
           sts->state = SERIALIZER_W_ATTRIBUTE_VALUE_START;
         } break;
         case SERIALIZER_W_ATTRIBUTE_VALUE_START: {
-          sts->data.data = ": ";
+          sts->data.data = ", ";
           sts->data.length = 2;
           sts->state = SERIALIZER_W_ATTRIBUTE_VALUE;
         } break;
@@ -441,12 +418,12 @@ static bool ml666_st_json_serializer_next(struct ml666_st_serializer* _sts){
         } break;
         case SERIALIZER_W_ATTRIBUTE_NEXT: {
           if((sts->current_attribute = ml666_st_attribute_get_next(sts->public.stb, sts->current_attribute))){
-            sts->state = SERIALIZER_W_ATTRIBUTE_NAME;
-            sts->data.data = ",\n";
-            sts->data.length = 2;
+            sts->state = SERIALIZER_W_ATTRIBUTE_START;
+            sts->data.data = "],\n";
+            sts->data.length = 3;
           }else{
-            sts->data.data = "\n";
-            sts->data.length = 1;
+            sts->data.data = "]\n";
+            sts->data.length = 2;
             sts->state = SERIALIZER_W_ATTRIBUTE_LIST_END;
           }
         } break;
@@ -454,38 +431,27 @@ static bool ml666_st_json_serializer_next(struct ml666_st_serializer* _sts){
           if(sts->level)
             sts->level--;
           sts->spaces = sts->level * 2;
-          sts->data.data = "}";
+          sts->data.data = "]";
           sts->data.length = 1;
           sts->state = SERIALIZER_W_CHILDREN_1;
         } break;
         case SERIALIZER_W_CHILDREN_1: {
           if(ml666_st_get_first_child(sts->public.stb, ML666_ST_U_CHILDREN(sts->public.stb, sts->cur))){
-            sts->data.data = ",\n";
-            sts->data.length = 2;
+            sts->state = SERIALIZER_W_CHILDREN_2;
+            sts->data.data = ", [\n";
+            sts->data.length = 4;
+            if(!++sts->level)
+              sts->level = ~0;
           }else{
-            sts->data.data = "\n";
-            sts->data.length = 1;
+            sts->state = SERIALIZER_W_NEXT_MEMBER;
+            sts->data.data = ", []]";
+            sts->data.length = 5;
+            if(sts->has_children && sts->has_attribute)
+              if(sts->level)
+                sts->level--;
           }
-          sts->state = SERIALIZER_W_CHILDREN_2;
         } break;
         case SERIALIZER_W_CHILDREN_2: {
-          if(ml666_st_get_first_child(sts->public.stb, ML666_ST_U_CHILDREN(sts->public.stb, sts->cur))){
-            sts->data.data = "\"children\": ";
-            sts->spaces = sts->level * 2;
-            sts->data.length = 12;
-            sts->state = SERIALIZER_W_CHILDREN_3;
-          }else{
-            sts->state = SERIALIZER_W_END_TAG;
-          }
-        } break;
-        case SERIALIZER_W_CHILDREN_3: {
-          sts->state = SERIALIZER_W_CHILDREN_4;
-          sts->data.data = "[\n";
-          sts->data.length = 2;
-          if(!++sts->level)
-            sts->level = ~0;
-        } break;
-        case SERIALIZER_W_CHILDREN_4: {
           sts->spaces = sts->level * 2;
           sts->state = SERIALIZER_W_NEXT_CHILD;
         } break;
@@ -495,19 +461,14 @@ static bool ml666_st_json_serializer_next(struct ml666_st_serializer* _sts){
           sts->state = SERIALIZER_W_END_CHILDLIST_2;
         } break;
         case SERIALIZER_W_END_CHILDLIST_2: {
+          if(sts->has_children && sts->has_attribute)
+            if(sts->level)
+              sts->level--;
           if(sts->level)
             sts->level--;
           sts->spaces = sts->level * 2;
-          sts->data.data = "]\n";
+          sts->data.data = "]]";
           sts->data.length = 2;
-          sts->state = SERIALIZER_W_END_TAG;
-        } break;
-        case SERIALIZER_W_END_TAG: {
-          sts->data.data = "}";
-          sts->data.length = 1;
-          if(sts->level)
-            sts->level--;
-          sts->spaces = sts->level * 2;
           sts->state = SERIALIZER_W_NEXT_MEMBER;
         } break;
         case SERIALIZER_W_CONTENT: {
@@ -517,22 +478,9 @@ static bool ml666_st_json_serializer_next(struct ml666_st_serializer* _sts){
           sts->state = SERIALIZER_W_NEXT_MEMBER;
         } break;
         case SERIALIZER_W_COMMENT_START: {
-          if(!++sts->level)
-            sts->level = ~0;
-          sts->data.length = 2;
-          sts->data.data = "{\n";
-          sts->state = SERIALIZER_W_COMMENT_START_2;
-        } break;
-        case SERIALIZER_W_COMMENT_START_2: {
           sts->spaces = sts->level * 2;
-          sts->data.data = "\"type\": \"comment\",\n";
-          sts->data.length = 19;
-          sts->state = SERIALIZER_W_COMMENT_START_3;
-        } break;
-        case SERIALIZER_W_COMMENT_START_3: {
-          sts->spaces = sts->level * 2;
-          sts->data.data = "\"text\": ";
-          sts->data.length = 8;
+          sts->data.length = 6;
+          sts->data.data = "[\"C\", ";
           sts->state = SERIALIZER_W_COMMENT;
         } break;
         case SERIALIZER_W_COMMENT: {
@@ -542,8 +490,8 @@ static bool ml666_st_json_serializer_next(struct ml666_st_serializer* _sts){
         } break;
         case SERIALIZER_W_COMMENT_END: {
           sts->data.length = 1;
-          sts->data.data = "\n";
-          sts->state = SERIALIZER_W_END_TAG;
+          sts->data.data = "]";
+          sts->state = SERIALIZER_W_NEXT_MEMBER;
         } break;
       }
     }

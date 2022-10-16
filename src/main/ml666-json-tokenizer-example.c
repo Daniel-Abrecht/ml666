@@ -1,5 +1,5 @@
 #define _DEFAULT_SOURCE
-#include <ml666/json-token-emmiter.h>
+#include <ml666/json-tokenizer.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -7,18 +7,18 @@
 static bool ml666__print_buf_escaped(int fd, const struct ml666_buffer_ro ro);
 
 int main(){
-  struct ml666_tokenizer* tokenizer = ml666_json_token_emmiter_create(0);
+  struct ml666_json_tokenizer* tokenizer = ml666_json_tokenizer_create(0);
   if(!tokenizer){
     fprintf(stderr, "ml666_tokenizer_create failed\n");
     return 1;
   }
-  while(ml666_tokenizer_next(tokenizer)){
+  while(ml666_json_tokenizer_next(tokenizer)){
     if(tokenizer->token){
       printf(
         "%4zu:%4zu: %c %s [%zu]: ",
         tokenizer->line, tokenizer->column,
         tokenizer->complete ? 'c' : 'p',
-        ml666__token_name[tokenizer->token],
+        ml666__json_token_name[tokenizer->token],
         tokenizer->match.length
       );
       fflush(stdout);
@@ -28,10 +28,10 @@ int main(){
   }
   if(tokenizer->error){
     fprintf(stderr, "ml666_tokenizer_next failed: At %zu,%zu: %s\n", tokenizer->line, tokenizer->column, tokenizer->error);
-    ml666_tokenizer_destroy(tokenizer);
+    ml666_json_tokenizer_destroy(tokenizer);
     return 1;
   }
-  ml666_tokenizer_destroy(tokenizer);
+  ml666_json_tokenizer_destroy(tokenizer);
   return 0;
 }
 

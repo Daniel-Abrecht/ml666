@@ -1,4 +1,5 @@
 #include <ml666/simple-tree.h>
+#include <ml666/json-token-emmiter.h>
 #include <ml666/simple-tree-parser.h>
 #include <ml666/simple-tree-builder.h>
 #include <ml666/simple-tree-ml666-serializer.h>
@@ -13,6 +14,7 @@ enum format {
 
 struct arguments {
   enum format output_format;
+  enum format input_format;
 };
 
 bool parse_args(struct arguments* args, int* argc, char* argv[]){
@@ -24,7 +26,15 @@ bool parse_args(struct arguments* args, int* argc, char* argv[]){
       j += 1;
       continue;
     }
-    if(!strcmp(argv[i], "--output-format")){
+    if(!strcmp(argv[i], "--input-format")){
+      if(++i >= n)
+        return false;
+      if(!strcmp(argv[i], "ml666")){
+        args->input_format = F_ML666;
+      }else if(!strcmp(argv[i], "json")){
+        args->input_format = F_JSON;
+      }else return false;
+    }else if(!strcmp(argv[i], "--output-format")){
       if(++i >= n)
         return false;
       if(!strcmp(argv[i], "ml666")){
@@ -43,7 +53,7 @@ bool parse_args(struct arguments* args, int* argc, char* argv[]){
 int main(int argc, char* argv[]){
   struct arguments args = {0};
   if(!parse_args(&args, &argc, argv)){
-    fprintf(stderr, "usage: %s [--output-format ml666|json]\n", *argv);
+    fprintf(stderr, "usage: %s [--input-format ml666|json] [--output-format ml666|json]\n", *argv);
     return 1;
   }
 
@@ -54,8 +64,14 @@ int main(int argc, char* argv[]){
     return 1;
   }
 
+  struct ml666_tokenizer* tokenizer = 0;
+  switch(args.input_format){
+    case F_ML666: break;
+    case F_JSON : tokenizer = ml666_json_token_emmiter_create(0); break;
+  }
+
   // Parsing the document
-  struct ml666_st_document* document = ml666_st_parse(0, stb);
+  struct ml666_st_document* document = ml666_st_parse(stb, 0, .tokenizer=tokenizer);
   if(!document){
     ml666_st_builder_destroy(stb);
     return 1;

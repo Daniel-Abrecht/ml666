@@ -24,14 +24,15 @@ struct ml666_simple_tree_parser_cb {
 };
 
 struct ml666_simple_tree_parser_create_args {
-  int fd;
   struct ml666_st_builder* stb;
+  int fd; // Only used if parser and tokenizer is not set
   // Optional
+  struct ml666_parser* parser; // Will be freed by simple tree parser if set
+  struct ml666_tokenizer* tokenizer; // Will be freed by parser if set, only used if parser is not set
   void* user_ptr;
   ml666__cb__malloc*  malloc;
   ml666__cb__realloc* realloc;
   ml666__cb__free*    free;
-  struct ml666_parser* parser; // Will be freed by simple tree parser if set
 };
 
 ML666_EXPORT struct ml666_simple_tree_parser* ml666_simple_tree_parser_create_p(struct ml666_simple_tree_parser_create_args args);

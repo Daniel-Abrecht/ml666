@@ -232,7 +232,8 @@ struct ml666_simple_tree_parser* ml666_simple_tree_parser_create_p(struct ml666_
     stp->parser = args.parser;
   }else{
     stp->parser = ml666_parser_create(
-      .fd = 0,
+      .fd = args.fd,
+      .tokenizer = args.tokenizer,
       .api = &callbacks,
       .user_ptr = stp
     );

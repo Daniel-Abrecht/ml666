@@ -74,13 +74,13 @@ struct ml666_parser_cb {
 
 struct ml666_parser_create_args {
   const struct ml666_parser_api* api;
-  int fd;
+  int fd; // only used if tokenizer is not set, optional otherwise
+  struct ml666_tokenizer* tokenizer; // Frees the tokenizer if set
   // Optional
   void* user_ptr;
   ml666__cb__malloc* malloc;
   ml666__cb__realloc* realloc;
   ml666__cb__free* free;
-  struct ml666_tokenizer* tokenizer; // Frees the tokenizer if set
 };
 ML666_EXPORT struct ml666_parser* ml666_parser_create_p(struct ml666_parser_create_args args);
 #define ml666_parser_create(...) ml666_parser_create_p((struct ml666_parser_create_args){__VA_ARGS__})
