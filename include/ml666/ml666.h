@@ -11,5 +11,6 @@
 #include <ml666/simple-tree-serializer.h>
 #include <ml666/simple-tree-json-serializer.h>
 #include <ml666/simple-tree-ml666-serializer.h>
+#include <ml666/simple-tree-binary-serializer.h>
 
 #endif

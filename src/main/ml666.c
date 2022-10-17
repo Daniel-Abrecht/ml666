@@ -4,12 +4,14 @@
 #include <ml666/simple-tree-builder.h>
 #include <ml666/simple-tree-ml666-serializer.h>
 #include <ml666/simple-tree-json-serializer.h>
+#include <ml666/simple-tree-binary-serializer.h>
 #include <stdio.h>
 #include <string.h>
 
 enum format {
   F_ML666,
   F_JSON,
+  F_BINARY,
 };
 
 struct arguments {
@@ -41,6 +43,8 @@ bool parse_args(struct arguments* args, int* argc, char* argv[]){
         args->output_format = F_ML666;
       }else if(!strcmp(argv[i], "json")){
         args->output_format = F_JSON;
+      }else if(!strcmp(argv[i], "binary")){
+        args->output_format = F_BINARY;
       }else return false;
     }else return false;
   }
@@ -68,6 +72,7 @@ int main(int argc, char* argv[]){
   switch(args.input_format){
     case F_ML666: break;
     case F_JSON : tokenizer = ml666_json_token_emmiter_create(0); break;
+    case F_BINARY: /*tokenizer = ml666_binary_token_emmiter_create(0);*/ break;
   }
 
   // Parsing the document
@@ -80,8 +85,9 @@ int main(int argc, char* argv[]){
   // Serializing the document
   struct ml666_st_serializer* serializer = 0;
   switch(args.output_format){
-    case F_ML666: serializer = ml666_st_ml666_serializer_create(1, stb, ML666_ST_NODE(document)); break;
-    case F_JSON : serializer = ml666_st_json_serializer_create (1, stb, ML666_ST_NODE(document)); break;
+    case F_ML666 : serializer = ml666_st_ml666_serializer_create(1, stb, ML666_ST_NODE(document)); break;
+    case F_JSON  : serializer = ml666_st_json_serializer_create (1, stb, ML666_ST_NODE(document)); break;
+    case F_BINARY: serializer = ml666_st_binary_serializer_create (1, stb, ML666_ST_NODE(document)); break;
   }
   if(!serializer){
     fprintf(stderr, "error: couldn't create serializer\n");
