@@ -17,6 +17,7 @@ enum format {
 struct arguments {
   enum format output_format;
   enum format input_format;
+  bool recursive;
 };
 
 bool parse_args(struct arguments* args, int* argc, char* argv[]){
@@ -28,7 +29,9 @@ bool parse_args(struct arguments* args, int* argc, char* argv[]){
       j += 1;
       continue;
     }
-    if(!strcmp(argv[i], "--input-format")){
+    if(!strcmp(argv[i], "-r") || !strcmp(argv[i], "--recursive")){
+      args->recursive = true;
+    }else if(!strcmp(argv[i], "--input-format")){
       if(++i >= n)
         return false;
       if(!strcmp(argv[i], "ml666")){
@@ -57,7 +60,7 @@ bool parse_args(struct arguments* args, int* argc, char* argv[]){
 int main(int argc, char* argv[]){
   struct arguments args = {0};
   if(!parse_args(&args, &argc, argv)){
-    fprintf(stderr, "usage: %s [--input-format ml666|json] [--output-format ml666|json]\n", *argv);
+    fprintf(stderr, "usage: %s [-r] [--input-format ml666|json] [--output-format ml666|json]\n", *argv);
     return 1;
   }
 
@@ -87,7 +90,7 @@ int main(int argc, char* argv[]){
   switch(args.output_format){
     case F_ML666 : serializer = ml666_st_ml666_serializer_create(1, stb, ML666_ST_NODE(document)); break;
     case F_JSON  : serializer = ml666_st_json_serializer_create (1, stb, ML666_ST_NODE(document)); break;
-    case F_BINARY: serializer = ml666_st_binary_serializer_create (1, stb, ML666_ST_NODE(document)); break;
+    case F_BINARY: serializer = ml666_st_binary_serializer_create (1, stb, ML666_ST_NODE(document), .recursive = args.recursive); break;
   }
   if(!serializer){
     fprintf(stderr, "error: couldn't create serializer\n");

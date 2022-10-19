@@ -1,5 +1,5 @@
 #define _DEFAULT_SOURCE
-#include <ml666/json-token-emmiter.h>
+#include <ml666/tokenizer.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -7,7 +7,7 @@
 static bool ml666__print_buf_escaped(int fd, const struct ml666_buffer_ro ro);
 
 int main(){
-  struct ml666_tokenizer* tokenizer = ml666_json_token_emmiter_create(0);
+  struct ml666_tokenizer* tokenizer = ml666_tokenizer_create(0);
   if(!tokenizer){
     fprintf(stderr, "ml666_tokenizer_create failed\n");
     return 1;

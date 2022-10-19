@@ -13,6 +13,7 @@ struct ml666_st_serializer_private {
   int fd;
   struct ml666_st_member* cur;
   struct ml666_buffer_ro buf;
+  bool recursive;
   ml666__cb__malloc* malloc;
   ml666__cb__free*   free;
 };
@@ -41,23 +42,14 @@ struct ml666_st_serializer* ml666_st_binary_serializer_create_p(struct ml666_st_
   struct ml666_st_member* first_child = 0;
   if(ML666_ST_TYPE(args.node) == ML666_ST_NT_DOCUMENT){
     struct ml666_st_children* children = ML666_ST_U_CHILDREN(args.stb, args.node);
+    if(children && ml666_st_get_first_child(args.stb, children) == ml666_st_get_last_child(args.stb, children))
+      args.node = ML666_ST_NODE(ml666_st_get_first_child(args.stb, children));
+  }
+  if(ML666_ST_TYPE(args.node) == ML666_ST_NT_DOCUMENT || ML666_ST_TYPE(args.node) == ML666_ST_NT_ELEMENT){
+    struct ml666_st_children* children = ML666_ST_U_CHILDREN(args.stb, args.node);
     if(children)
       first_child = ml666_st_get_first_child(args.stb, children);
-    for(struct ml666_st_member* it=first_child; it; it=ml666_st_member_get_next(args.stb, it)){
-      if( ML666_ST_TYPE(it) != ML666_ST_NT_CONTENT
-       && ML666_ST_TYPE(it) != ML666_ST_NT_COMMENT
-      ){
-        fprintf(stderr, "ml666_st_binary_serializer_create_p: can't handle elements and the likes, can only dump text or binary data\n");
-        return 0;
-      }
-    }
   }else{
-    if( ML666_ST_TYPE(args.node) != ML666_ST_NT_CONTENT
-     && ML666_ST_TYPE(args.node) != ML666_ST_NT_COMMENT
-    ){
-      fprintf(stderr, "ml666_st_binary_serializer_create_p: can't handle elements and the likes, can only dump text or binary data\n");
-      return 0;
-    }
     first_child = ML666_ST_U_MEMBER(args.node);
   }
   struct ml666_st_serializer_private* sts = args.malloc(args.user_ptr, sizeof(*sts));
@@ -72,17 +64,43 @@ struct ml666_st_serializer* ml666_st_binary_serializer_create_p(struct ml666_st_
   sts->fd = args.fd;
   sts->node = args.node;
   sts->cur = first_child;
+  sts->recursive = args.recursive;
   sts->malloc = args.malloc;
   sts->free = args.free;
   ml666_st_node_ref(sts->public.stb, sts->node);
   return &sts->public;
 }
 
+static inline struct ml666_st_member* next(struct ml666_st_builder* stb, struct ml666_st_node* top, struct ml666_st_member* member, bool recursive){
+  if(ML666_ST_NODE(member) == top)
+    return 0;
+  if(recursive){
+    struct ml666_st_member* first_child = ml666_st_get_first_child(stb, ML666_ST_U_CHILDREN(stb, member));
+    if(first_child)
+      return first_child;
+  }
+  struct ml666_st_member* n = ml666_st_member_get_next(stb, member);
+  if(n) return n;
+  if(recursive){
+    struct ml666_st_node* m = ML666_ST_NODE(member);
+    while(ML666_ST_U_MEMBER(m)){
+      m = ml666_st_member_get_parent(stb, ML666_ST_U_MEMBER(m));
+      if(!m || m == top || !ML666_ST_U_MEMBER(m))
+        return 0;
+      struct ml666_st_member* m2 = ml666_st_member_get_next(stb, ML666_ST_U_MEMBER(m));
+      if(m2)
+        return m2;
+
+    }
+  }
+  return 0;
+}
+
 static bool ml666_st_binary_serializer_next(struct ml666_st_serializer* _sts){
   struct ml666_st_serializer_private*restrict const sts = (struct ml666_st_serializer_private*)_sts;
   if(sts->fd == -1)
     return false;
-  while(sts->cur){
+  while(sts->cur || sts->buf.length){
     if(sts->buf.length){
       ssize_t res = write(sts->fd, sts->buf.data, sts->buf.length);
       if(res < 0){
@@ -92,21 +110,12 @@ static bool ml666_st_binary_serializer_next(struct ml666_st_serializer* _sts){
       }
       sts->buf.data   += res;
       sts->buf.length -= res;
-      if(!sts->buf.length){
-        if(ML666_ST_NODE(sts->cur) == sts->node)
-          break;
-        sts->cur = ml666_st_member_get_next(sts->public.stb, sts->cur);
-      }
       return true;
     }else{
       struct ml666_st_content* content = ML666_ST_U_CONTENT(sts->cur);
-      if(!content){
-        if(ML666_ST_NODE(sts->cur) == sts->node)
-          break;
-        sts->cur = ml666_st_member_get_next(sts->public.stb, sts->cur);
-        continue;
-      }
-      sts->buf = ml666_st_content_get(sts->public.stb, content);
+      if(content)
+        sts->buf = ml666_st_content_get(sts->public.stb, content);
+      sts->cur = next(sts->public.stb, sts->node, sts->cur, sts->recursive);
     }
   }
   close(sts->fd);

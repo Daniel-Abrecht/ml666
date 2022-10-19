@@ -279,9 +279,13 @@ static inline const struct ml666_buffer* ml666_st_attribute_take_value(struct ml
 }
 
 static inline struct ml666_st_member* ml666_st_get_first_child(struct ml666_st_builder* stb, struct ml666_st_children* children){
+  if(!children)
+    return 0;
   return stb->cb->get_first_child(stb, children);
 }
 static inline struct ml666_st_member* ml666_st_get_last_child(struct ml666_st_builder* stb, struct ml666_st_children* children){
+  if(!children)
+    return 0;
   return stb->cb->get_last_child(stb, children);
 }
 
