@@ -371,6 +371,7 @@ static bool ml666_json_tokenizer_d_next(struct ml666_json_tokenizer* _tokenizer)
           }
         } break;
         case JS_OBJECT_FIRST: {
+          tokenizer->skip_spaces = true;
           if(ch == '}'){
             if(!aobmap_pop(tokenizer)){
               tokenizer->public.error = "bad tokenizer state";
@@ -417,6 +418,7 @@ static bool ml666_json_tokenizer_d_next(struct ml666_json_tokenizer* _tokenizer)
           }
         } break;
         case JS_ARRAY_FIRST: {
+          tokenizer->skip_spaces = true;
           if(ch == ']'){
             if(!aobmap_pop(tokenizer)){
               tokenizer->public.error = "bad tokenizer state";
