@@ -32,8 +32,7 @@ static bool tag_push(struct ml666_parser* parser, ml666_opaque_tag_name* name){
   stp->current_content = 0;
   stp->current_comment = 0;
   stp->current_attribute = 0;
-  struct ml666_hashed_buffer entry;
-  ml666_hashed_buffer__set(&entry, (*name)->buffer.ro);
+  struct ml666_hashed_buffer entry = ml666_hashed_buffer__create((*name)->buffer.ro);
   bool copy_name = true; // Note: "false" only works if the allocator actually used malloc. Any other case will fail. "true" always works, but is more expencive.
   struct ml666_st_element* element = ml666_st_element_create(stp->public.stb, &entry, copy_name);
   if(!copy_name)
@@ -150,8 +149,7 @@ static bool set_attribute(struct ml666_parser* parser, ml666_opaque_attribute_na
     parser->error = "simple_tree_parser::data_append: invalid parser state\n";
     return false;
   }
-  struct ml666_hashed_buffer entry;
-  ml666_hashed_buffer__set(&entry, (*name)->buffer.ro);
+  struct ml666_hashed_buffer entry = ml666_hashed_buffer__create((*name)->buffer.ro);
   bool copy_name = true; // Note: "false" only works if the allocator actually used malloc. Any other case will fail. "true" always works, but is more expencive.
   struct ml666_st_attribute* attribute = ml666_st_attribute_lookup(stp->public.stb, element, &entry, ML666_ST_AOF_CREATE_EXCLUSIVE | (copy_name?0:ML666_ST_AOF_CREATE_NOCOPY));
   stp->current_attribute = attribute;

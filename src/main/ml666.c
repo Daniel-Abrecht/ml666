@@ -1,3 +1,4 @@
+#include <ml666/utils.h>
 #include <ml666/simple-tree.h>
 #include <ml666/json-token-emmiter.h>
 #include <ml666/simple-tree-parser.h>
@@ -5,8 +6,10 @@
 #include <ml666/simple-tree-ml666-serializer.h>
 #include <ml666/simple-tree-json-serializer.h>
 #include <ml666/simple-tree-binary-serializer.h>
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 enum format {
   F_ML666,
@@ -17,7 +20,9 @@ enum format {
 struct arguments {
   enum format output_format;
   enum format input_format;
+  struct ml666_hashed_buffer attribute;
   bool recursive;
+  bool lf;
 };
 
 bool parse_args(struct arguments* args, int* argc, char* argv[]){
@@ -31,6 +36,8 @@ bool parse_args(struct arguments* args, int* argc, char* argv[]){
     }
     if(!strcmp(argv[i], "-r") || !strcmp(argv[i], "--recursive")){
       args->recursive = true;
+    }else if(!strcmp(argv[i], "--lf")){
+      args->lf = true;
     }else if(!strcmp(argv[i], "--input-format")){
       if(++i >= n)
         return false;
@@ -49,8 +56,18 @@ bool parse_args(struct arguments* args, int* argc, char* argv[]){
       }else if(!strcmp(argv[i], "binary")){
         args->output_format = F_BINARY;
       }else return false;
+    }else if(!strcmp(argv[i], "--attribute")){
+      if(++i >= n)
+        return false;
+      struct ml666_buffer buf = {
+        .data = argv[i],
+        .length = strlen(argv[i]),
+      };
+      args->attribute = ml666_hashed_buffer__create(buf.ro);
     }else return false;
   }
+  if(args->attribute.buffer.length && args->output_format != F_BINARY)
+    return false;
   *argc = j;
   if(j > 1)
     return false;
@@ -60,7 +77,13 @@ bool parse_args(struct arguments* args, int* argc, char* argv[]){
 int main(int argc, char* argv[]){
   struct arguments args = {0};
   if(!parse_args(&args, &argc, argv)){
-    fprintf(stderr, "usage: %s [-r] [--input-format ml666|json] [--output-format ml666|json]\n", *argv);
+    fprintf(stderr, "usage: %s [-r] [--input-format ml666|json] [--output-format ml666|json|binary]\n", *argv);
+    return 1;
+  }
+
+  const int fd_out = dup(1);
+  if(fd_out == -1){
+    perror("dup failed");
     return 1;
   }
 
@@ -88,9 +111,15 @@ int main(int argc, char* argv[]){
   // Serializing the document
   struct ml666_st_serializer* serializer = 0;
   switch(args.output_format){
-    case F_ML666 : serializer = ml666_st_ml666_serializer_create(1, stb, ML666_ST_NODE(document)); break;
-    case F_JSON  : serializer = ml666_st_json_serializer_create (1, stb, ML666_ST_NODE(document)); break;
-    case F_BINARY: serializer = ml666_st_binary_serializer_create (1, stb, ML666_ST_NODE(document), .recursive = args.recursive); break;
+    case F_ML666 : serializer = ml666_st_ml666_serializer_create(fd_out, stb, ML666_ST_NODE(document)); break;
+    case F_JSON  : serializer = ml666_st_json_serializer_create (fd_out, stb, ML666_ST_NODE(document)); break;
+    case F_BINARY: {
+      serializer = ml666_st_binary_serializer_create(
+        fd_out, stb, ML666_ST_NODE(document),
+        .recursive=args.recursive,
+        .attribute=args.attribute.buffer.length ? &args.attribute : 0,
+      );
+    } break;
   }
   if(!serializer){
     fprintf(stderr, "error: couldn't create serializer\n");
@@ -107,5 +136,9 @@ int main(int argc, char* argv[]){
 
   // Freeing the tree builder
   ml666_st_builder_destroy(stb);
+
+  if(args.lf)
+    while(write(1, "\n", 1) == -1 && errno == EINTR);
+
   return 0;
 }

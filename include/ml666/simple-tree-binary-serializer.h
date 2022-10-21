@@ -7,6 +7,9 @@ struct ml666_st_binary_serializer_create_args {
   int fd;
   struct ml666_st_builder* stb;
   struct ml666_st_node* node;
+
+  /* Optional */
+  const struct ml666_hashed_buffer* attribute;
   bool recursive;
   void* user_ptr;
   ml666__cb__malloc* malloc;

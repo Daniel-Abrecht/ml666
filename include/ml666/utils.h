@@ -23,10 +23,12 @@ static inline uint64_t ml666_hash_FNV_1a(struct ml666_buffer_ro buf){
   return ml666_hash_FNV_1a_append(buf, ML666_FNV_OFFSET_BASIS);
 }
 
-static inline void ml666_hashed_buffer__set(struct ml666_hashed_buffer* hashed, struct ml666_buffer_ro content){
-  hashed->buffer = content;
-  // 0 for 0 length, for consistency with new zeroed out buffers
-  hashed->hash   = content.length ? ml666_hash_FNV_1a(content) : 0;
+static inline struct ml666_hashed_buffer ml666_hashed_buffer__create(struct ml666_buffer_ro content){
+  return (struct ml666_hashed_buffer){
+    .buffer = content,
+    // 0 for 0 length, for consistency with new zeroed out buffers
+    .hash   = content.length ? ml666_hash_FNV_1a(content) : 0,
+  };
 }
 
 // UTF-8
@@ -204,6 +206,12 @@ ML666_EXPORT struct ml666_hashed_buffer_set* ml666_create_default_hashed_buffer_
 
 
 // other stuff
+
+#if defined(__STDC__) && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+#define ML666_LCPTR(X) (&((struct { typeof(X) x; }){X}).x)
+#else
+#define ML666_LCPTR(X) (&((struct { __typeof__(X) x; }){X}).x)
+#endif
 
 ML666_EXPORT ml666__cb__malloc  ml666__d__malloc;
 ML666_EXPORT ml666__cb__realloc ml666__d__realloc;

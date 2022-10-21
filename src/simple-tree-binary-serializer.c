@@ -45,7 +45,17 @@ struct ml666_st_serializer* ml666_st_binary_serializer_create_p(struct ml666_st_
     if(children && ml666_st_get_first_child(args.stb, children) == ml666_st_get_last_child(args.stb, children))
       args.node = ML666_ST_NODE(ml666_st_get_first_child(args.stb, children));
   }
-  if(ML666_ST_TYPE(args.node) == ML666_ST_NT_DOCUMENT || ML666_ST_TYPE(args.node) == ML666_ST_NT_ELEMENT){
+  const struct ml666_buffer_ro* buf = 0;
+  if(args.attribute){
+    struct ml666_st_element* element = ML666_ST_U_ELEMENT(args.node);
+    if(!element){
+      fprintf(stderr, "ml666_st_binary_serializer_create_p: argument \"attribute\", but \"node\" isn't an element!\n");
+      return false;
+    }
+    struct ml666_st_attribute* attribute = ml666_st_attribute_lookup(args.stb, element, args.attribute, 0);
+    if(attribute)
+      buf = ml666_st_attribute_get_value(args.stb, attribute);
+  }else if(ML666_ST_TYPE(args.node) == ML666_ST_NT_DOCUMENT || ML666_ST_TYPE(args.node) == ML666_ST_NT_ELEMENT){
     struct ml666_st_children* children = ML666_ST_U_CHILDREN(args.stb, args.node);
     if(children)
       first_child = ml666_st_get_first_child(args.stb, children);
@@ -64,6 +74,8 @@ struct ml666_st_serializer* ml666_st_binary_serializer_create_p(struct ml666_st_
   sts->fd = args.fd;
   sts->node = args.node;
   sts->cur = first_child;
+  if(buf)
+    sts->buf = *buf;
   sts->recursive = args.recursive;
   sts->malloc = args.malloc;
   sts->free = args.free;
@@ -90,7 +102,6 @@ static inline struct ml666_st_member* next(struct ml666_st_builder* stb, struct 
       struct ml666_st_member* m2 = ml666_st_member_get_next(stb, ML666_ST_U_MEMBER(m));
       if(m2)
         return m2;
-
     }
   }
   return 0;
