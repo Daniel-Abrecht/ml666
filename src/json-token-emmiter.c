@@ -85,7 +85,7 @@ struct ml666_tokenizer* ml666_json_token_emmiter_create_p(struct ml666_json_toke
     args.free = ml666__d__free;
   struct ml666__json_token_emmiter_private*restrict jte = args.malloc(args.user_ptr, sizeof(*jte));
   if(!jte){
-    fprintf(stderr, "%s:%u: memfd_create failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
+    fprintf(stderr, "%s:%u: malloc failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
     goto error;
   }
   memset(jte, 0, sizeof(*jte));
@@ -275,11 +275,15 @@ static bool ml666_json_token_emmiter_d_next(struct ml666_tokenizer* _tokenizer){
         }
       } break;
       case LS_PROPERTY_LIST: {
-        if(json->token != ML666_JSON_ARRAY_START){
+        if(json->token == ML666_JSON_ARRAY_START){
+          jte->state = LS_PROPERTY_LIST_ENTRY;
+        }else if(json->token == ML666_JSON_ARRAY_END){
+          jte->state = LS_ENTRY_END;
+          goto retry;
+        }else{
           jte->public.error = "schema error: expected array of properties";
           goto error;
         }
-        jte->state = LS_PROPERTY_LIST_ENTRY;
       } break;
       case LS_PROPERTY_LIST_ENTRY: {
         if(json->token == ML666_JSON_ARRAY_START){
@@ -332,11 +336,15 @@ static bool ml666_json_token_emmiter_d_next(struct ml666_tokenizer* _tokenizer){
         }
       } break;
       case LS_CHILD_LIST: {
-        if(json->token != ML666_JSON_ARRAY_START){
+        if(json->token == ML666_JSON_ARRAY_START){
+          jte->state = LS_ENTRY;
+        }else if(json->token == ML666_JSON_ARRAY_END){
+          jte->state = LS_ENTRY_END;
+          goto retry;
+        }else{
           jte->public.error = "schema error: expected array of child nodes";
           goto error;
         }
-        jte->state = LS_ENTRY;
       } break;
       case LS_CONTENT: {
         if(json->token == ML666_JSON_ARRAY_START){

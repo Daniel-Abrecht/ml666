@@ -117,7 +117,7 @@ struct ml666_tokenizer* ml666_tokenizer_create_p(struct ml666_tokenizer_create_a
     args.free = ml666__d__free;
   struct ml666__tokenizer_private*restrict tokenizer = args.malloc(args.user_ptr, sizeof(*tokenizer));
   if(!tokenizer){
-    fprintf(stderr, "%s:%u: memfd_create failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
+    fprintf(stderr, "%s:%u: malloc failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
     goto error;
   }
   memset(tokenizer, 0, sizeof(*tokenizer));
@@ -775,6 +775,7 @@ final:
   // Let's free this stuff as early as possible
   if(munmap(tokenizer->memory, size*4))
     fprintf(stderr, "%s:%u: munmap failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
+  tokenizer->memory = 0;
   if(close(tokenizer->fd))
     fprintf(stderr, "%s:%u: close failed (%d): %s\n", __FILE__, __LINE__, errno, strerror(errno));
   tokenizer->fd = -1;

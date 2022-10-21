@@ -1,6 +1,7 @@
 #include <ml666/utils.h>
 #include <ml666/simple-tree.h>
 #include <ml666/json-token-emmiter.h>
+#include <ml666/binary-token-emmiter.h>
 #include <ml666/simple-tree-parser.h>
 #include <ml666/simple-tree-builder.h>
 #include <ml666/simple-tree-ml666-serializer.h>
@@ -45,6 +46,8 @@ bool parse_args(struct arguments* args, int* argc, char* argv[]){
         args->input_format = F_ML666;
       }else if(!strcmp(argv[i], "json")){
         args->input_format = F_JSON;
+      }else if(!strcmp(argv[i], "binary")){
+        args->input_format = F_BINARY;
       }else return false;
     }else if(!strcmp(argv[i], "--output-format")){
       if(++i >= n)
@@ -77,7 +80,7 @@ bool parse_args(struct arguments* args, int* argc, char* argv[]){
 int main(int argc, char* argv[]){
   struct arguments args = {0};
   if(!parse_args(&args, &argc, argv)){
-    fprintf(stderr, "usage: %s [-r] [--input-format ml666|json] [--output-format ml666|json|binary]\n", *argv);
+    fprintf(stderr, "usage: %s [-r] [--lf] [--input-format ml666|json|binary] [--output-format ml666|json|binary]\n", *argv);
     return 1;
   }
 
@@ -98,7 +101,7 @@ int main(int argc, char* argv[]){
   switch(args.input_format){
     case F_ML666: break;
     case F_JSON : tokenizer = ml666_json_token_emmiter_create(0); break;
-    case F_BINARY: /*tokenizer = ml666_binary_token_emmiter_create(0);*/ break;
+    case F_BINARY: tokenizer = ml666_binary_token_emmiter_create(0); break;
   }
 
   // Parsing the document

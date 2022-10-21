@@ -22,8 +22,8 @@ endif
 
 ifdef asan
 TYPE := $(TYPE)-asan
-CFLAGS  += -fsanitize=address
-LDFLAGS += -fsanitize=address
+CFLAGS  += -fsanitize=address,undefined
+LDFLAGS += -fsanitize=address,undefined
 endif
 
 CFLAGS  += --std=c17
