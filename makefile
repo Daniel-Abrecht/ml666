@@ -41,12 +41,13 @@ endif
 
 OBJECTS := $(patsubst %,build/$(TYPE)/o/%.o,$(SOURCES))
 
-.PHONY: all clean get-bin get-lib install uninstall shell test
+.PHONY: all clean get-bin get-lib install uninstall shell test docs clean-docs install-docs uninstall-docs
 
 all: bin/$(TYPE)/ml666-tokenizer-example \
      bin/$(TYPE)/ml666 \
      lib/$(TYPE)/libml666.a \
-     lib/$(TYPE)/libml666.so
+     lib/$(TYPE)/libml666.so \
+     docs
 
 get-bin:
 	@echo bin/$(TYPE)/
@@ -77,7 +78,7 @@ build/test/%: test/%.ml666 test/%.result bin/$(TYPE)/ml666-tokenizer-example
 	bin/$(TYPE)/ml666-tokenizer-example <"$<" >"$@.result"
 	diff "$@.result" "$(word 2,$^)" && touch "$@"
 
-clean:
+clean: clean-docs
 	rm -rf build/$(TYPE)/ bin/$(TYPE)/ lib/$(TYPE)/
 
 install:
@@ -99,10 +100,28 @@ uninstall:
 	rm -f "$(DESTDIR)$(prefix)/bin/ml666"
 	rm -rf "$(DESTDIR)$(prefix)/include/ml666/"
 
+install-docs:
+	mkdir -p "$(DESTDIR)$(prefix)/share/man/man3/"
+	rm -f "$(DESTDIR)$(prefix)/share/man/man3/"ml666_*.3
+	cp build/docs/api/man/man3/ml666_*.3 "$(DESTDIR)$(prefix)/share/man/man3/"
+
+uninstall-docs:
+	rm -f "$(DESTDIR)$(prefix)/share/man/man3/"ml666_*.3
+
 shell:
 	PROMPT_COMMAND='if [ -z "$$PS_SET" ]; then PS_SET=1; PS1="(ml666) $$PS1"; fi' \
 	LD_LIBRARY_PATH="$$PWD/lib/$(TYPE)/" \
 	PATH="$$PWD/bin/$(TYPE)/:$$PATH" \
+	MANPATH="$$PWD/build/docs/api/man/:$$(man -w)" \
 	  "$$SHELL"
 
 test: build/test/example
+
+docs: build/docs/api/.done
+
+build/docs/api/.done: $(HEADERS) Doxyfile
+	-doxygen
+	touch "$@"
+
+clean-docs:
+	rm -rf build/docs/api/
