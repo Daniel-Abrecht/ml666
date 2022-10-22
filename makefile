@@ -104,11 +104,11 @@ uninstall:
 
 install-docs:
 	mkdir -p "$(DESTDIR)$(prefix)/share/man/man3/"
-	rm -f "$(DESTDIR)$(prefix)/share/man/man3/"ml666_*.3
-	cp build/docs/api/man/man3/ml666_*.3 "$(DESTDIR)$(prefix)/share/man/man3/"
+	rm -f "$(DESTDIR)$(prefix)/share/man/man3/"ml666*.3
+	cp build/docs/api/man/man3/ml666*.3 "$(DESTDIR)$(prefix)/share/man/man3/"
 
 uninstall-docs:
-	rm -f "$(DESTDIR)$(prefix)/share/man/man3/"ml666_*.3
+	rm -f "$(DESTDIR)$(prefix)/share/man/man3/"ml666*.3
 
 shell:
 	if [ -z "$$SHELL" ]; then SHELL="$$(getent passwd $$(id -u) | cut -d : -f 7)"; fi; \
@@ -124,6 +124,7 @@ test: build/test/example
 docs: build/docs/api/.done
 
 build/docs/api/.done: $(HEADERS) Doxyfile
+	rm -rf build/docs/api/
 	-doxygen
 	touch "$@"
 

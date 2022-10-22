@@ -5,14 +5,22 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define ML666_FNV_PRIME        ((uint64_t)0x100000001B3llu)
-#define ML666_FNV_OFFSET_BASIS ((uint64_t)0xCBF29CE484222325llu)
-
-#define ML666_B36 "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-#define ML666_B64 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
+#define ML666_B36 "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ" ///< Digits for base36 numbers
+#define ML666_B64 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=" ///< Digits for base64 encoded content
 
 // Hashing
 
+/** \addtogroup ml666-buffer ml666_buffer API
+ * @{ */
+#define ML666_FNV_PRIME        ((uint64_t)0x100000001B3llu)      ///< This is the FNV Prime used for 64 bit hashs by the FNV algorithm
+#define ML666_FNV_OFFSET_BASIS ((uint64_t)0xCBF29CE484222325llu) ///< This is the initial hash value used when calculating the FNV hash
+
+/**
+ * Updates the hash using the new data in buf
+ * \param buf The old buffer
+ * \param buf The new buffer
+ * \returns the old Hash
+ */
 static inline uint64_t ml666_hash_FNV_1a_append(struct ml666_buffer_ro buf, uint_fast64_t hash){
   for(size_t i=0, n=buf.length; i<n; i++)
     hash = (hash ^ buf.data[i]) * ML666_FNV_PRIME;
@@ -22,7 +30,16 @@ static inline uint64_t ml666_hash_FNV_1a_append(struct ml666_buffer_ro buf, uint
 static inline uint64_t ml666_hash_FNV_1a(struct ml666_buffer_ro buf){
   return ml666_hash_FNV_1a_append(buf, ML666_FNV_OFFSET_BASIS);
 }
+/** @} */
 
+/** \addtogroup ml666-hashed-buffer ml666_hashed_buffer API
+ * @{ */
+/**
+ * This creates an ml666_hashed_buffer from an ml666_buffer_ro buffer.
+ * The data of the ml666_buffer_ro will not be copied.
+ * The hash will be callculated automatically. For an empty buffer, it's set to 0.
+ * \returns an ml666_hashed_buffer
+ */
 static inline struct ml666_hashed_buffer ml666_hashed_buffer__create(struct ml666_buffer_ro content){
   return (struct ml666_hashed_buffer){
     .buffer = content,
@@ -30,27 +47,91 @@ static inline struct ml666_hashed_buffer ml666_hashed_buffer__create(struct ml66
     .hash   = content.length ? ml666_hash_FNV_1a(content) : 0,
   };
 }
+/** @} */
 
 // UTF-8
 
+/** \addtogroup ml666-utf8 UTF-8 Helpers
+ * These are helpful functions for working with UTF-8 Data.
+ * @{ */
+
+/**
+ * This stores the current state for the ml666_utf8_validate function.
+ * To initialise or reset it, just make sure it's zeroed out.
+ */
 struct ml666_streaming_utf8_validator {
   uint_least8_t index : 3;
   uint_least8_t state : 4;
 };
 
-ML666_EXPORT bool ml666_utf8_validate(struct ml666_streaming_utf8_validator*restrict const v, const int _ch);
+/**
+ * For validating if a sequence of bytes is valid UTF-8.
+ * \param v The validator state
+ * \param ch The next character or EOF if the sequence is complete
+ * \returns true if everything is OK, false if the sequence wasn't valid.
+ */
+ML666_EXPORT bool ml666_utf8_validate(struct ml666_streaming_utf8_validator*restrict const v, const int ch);
+/** @} */
 
 // Useful function to work with ml666_buffer
 
+/** \addtogroup ml666-buffer ml666_buffer API
+ * @{ */
+
+/** \see ml666_buffer__dup */
 struct ml666_buffer__dup_args {
-  struct ml666_buffer* dest;
-  struct ml666_buffer_ro src;
-  void* that;
-  void*(*malloc)(void* that, size_t);
+  struct ml666_buffer* dest;          /**< Target buffer structure */
+  struct ml666_buffer_ro src;         /**< The buffer to be copied */
+  // Optional
+  void* that;                         /**< Optional. Userdefined parameter. Passed to all userdefined callbacks */
+  void*(*malloc)(void* that, size_t); /**< Optional. Custom allocator */
 };
+/** \see ml666_buffer__dup */
 typedef bool ml666_buffer__cb__dup_p(struct ml666_buffer__dup_args a);
-#define ml666_buffer__dup(...) ml666_buffer__dup_p((struct ml666_buffer__dup_args){__VA_ARGS__})
+/** \see ml666_buffer__dup */
 ML666_EXPORT ml666_buffer__cb__dup_p ml666_buffer__dup_p;
+/**
+ * Allocate & copy the data of a buffer.
+ * It will not free the data the target buffer structure points to.
+ *
+ * \see ml666_buffer__dup_args for the arguments. Please use designated initialisers for the optional arguments.
+ * \returns true on success, false on error
+ */
+#define ml666_buffer__dup(...) ml666_buffer__dup_p((struct ml666_buffer__dup_args){__VA_ARGS__})
+
+
+/** \see ml666_buffer__clear */
+struct ml666_buffer__clear_args {
+  struct ml666_buffer* buffer;
+  void* that;
+  void (*free)(void* that, void* ptr);
+};
+/** \see ml666_buffer__clear */
+typedef bool ml666_buffer__cb__clear_p(struct ml666_buffer__clear_args a);
+/** \see ml666_buffer__clear */
+ML666_EXPORT ml666_buffer__cb__clear_p ml666_buffer__clear_p;
+/**
+ * Frees the data of an ml666_buffer and then zeroes out the data structure.
+ *
+ * \see ml666_buffer__clear_args for the arguments. Please use designated initialisers for the optional arguments.
+ * \returns true on success, false on error
+ */
+#define ml666_buffer__clear(...) ml666_buffer__clear_p((struct ml666_buffer__clear_args){__VA_ARGS__})
+
+/** @} */
+
+/** \addtogroup ml666-hashed-buffer ml666_hashed_buffer API
+ * @{ */
+
+struct ml666_hashed_buffer__clear_args {
+  struct ml666_hashed_buffer* buffer;
+  void* that;
+  void (*free)(void* that, void* ptr);
+  ml666_buffer__cb__clear_p* clear;
+};
+typedef bool ml666_hashed_buffer__cb__clear_p(struct ml666_hashed_buffer__clear_args a);
+ML666_EXPORT ml666_hashed_buffer__cb__clear_p ml666_hashed_buffer__clear_p;
+#define ml666_hashed_buffer__clear(...) ml666_hashed_buffer__clear_p((struct ml666_hashed_buffer__clear_args){__VA_ARGS__})
 
 struct ml666_hashed_buffer__dup_args {
   struct ml666_hashed_buffer* dest;
@@ -60,27 +141,8 @@ struct ml666_hashed_buffer__dup_args {
   ml666_buffer__cb__dup_p* dup;
 };
 typedef bool ml666_hashed_buffer__cb__dup_p(struct ml666_hashed_buffer__dup_args a);
-#define ml666_hashed_buffer__dup(...) ml666_hashed_buffer__dup_p((struct ml666_hashed_buffer__dup_args){__VA_ARGS__})
 ML666_EXPORT ml666_hashed_buffer__cb__dup_p ml666_hashed_buffer__dup_p;
-
-struct ml666_buffer__clear_args {
-  struct ml666_buffer* buffer;
-  void* that;
-  void (*free)(void* that, void* ptr);
-};
-typedef bool ml666_buffer__cb__clear_p(struct ml666_buffer__clear_args a);
-#define ml666_buffer__clear(...) ml666_buffer__clear_p((struct ml666_buffer__clear_args){__VA_ARGS__})
-ML666_EXPORT ml666_buffer__cb__clear_p ml666_buffer__clear_p;
-
-struct ml666_hashed_buffer__clear_args {
-  struct ml666_hashed_buffer* buffer;
-  void* that;
-  void (*free)(void* that, void* ptr);
-  ml666_buffer__cb__clear_p* clear;
-};
-typedef bool ml666_hashed_buffer__cb__clear_p(struct ml666_hashed_buffer__clear_args a);
-#define ml666_hashed_buffer__clear(...) ml666_hashed_buffer__clear_p((struct ml666_hashed_buffer__clear_args){__VA_ARGS__})
-ML666_EXPORT ml666_hashed_buffer__cb__clear_p ml666_hashed_buffer__clear_p;
+#define ml666_hashed_buffer__dup(...) ml666_hashed_buffer__dup_p((struct ml666_hashed_buffer__dup_args){__VA_ARGS__})
 
 struct ml666_buffer__append_args {
   struct ml666_buffer* buffer;
@@ -88,6 +150,7 @@ struct ml666_buffer__append_args {
   void* that;
   ml666__cb__realloc* realloc;
 };
+ML666_EXPORT bool ml666_buffer__append_p(struct ml666_buffer__append_args args);
 /**
  * Append data to a buffer. Make sure the buffer content is actually allocated using malloc, as it tries to realloc it.
  * The arguments can be passed by position or by name. The parameters .that and .realloc are optional.
@@ -95,7 +158,6 @@ struct ml666_buffer__append_args {
  * \returns true on success, false on failure
  */
 #define ml666_buffer__append(...) ml666_buffer__append_p((struct ml666_buffer__append_args){__VA_ARGS__})
-ML666_EXPORT bool ml666_buffer__append_p(struct ml666_buffer__append_args args);
 
 struct ml666_hashed_buffer__append_args {
   struct ml666_hashed_buffer* buffer;
@@ -103,6 +165,7 @@ struct ml666_hashed_buffer__append_args {
   void* that;
   ml666__cb__realloc* realloc;
 };
+ML666_EXPORT bool ml666_hashed_buffer__append_p(struct ml666_hashed_buffer__append_args args);
 /**
  * Append data to a hashed buffer. Make sure the buffer content is actually allocated using malloc, as it tries to realloc it.
  * The arguments can be passed by position or by name. The parameters .that and .realloc are optional.
@@ -110,7 +173,8 @@ struct ml666_hashed_buffer__append_args {
  * \returns true on success, false on failure
  */
 #define ml666_hashed_buffer__append(...) ml666_hashed_buffer__append_p((struct ml666_hashed_buffer__append_args){__VA_ARGS__})
-ML666_EXPORT bool ml666_hashed_buffer__append_p(struct ml666_hashed_buffer__append_args args);
+
+/** @} */
 
 enum ml666_buffer_info_best_encoding {
   ML666_BIBE_ESCAPE,
@@ -208,9 +272,9 @@ ML666_EXPORT struct ml666_hashed_buffer_set* ml666_create_default_hashed_buffer_
 // other stuff
 
 #if defined(__STDC__) && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
-#define ML666_LCPTR(X) (&((struct { typeof(X) x; }){X}).x)
+#define ML666_LCPTR(X) (&((struct { typeof(X) x; }){X}).x) ///< Expression which makes a local copy of any value passed to it and returns a pointer to it
 #else
-#define ML666_LCPTR(X) (&((struct { __typeof__(X) x; }){X}).x)
+#define ML666_LCPTR(X) (&((struct { __typeof__(X) x; }){X}).x) ///< Expression which makes a local copy of any value passed to it and returns a pointer to it
 #endif
 
 ML666_EXPORT ml666__cb__malloc  ml666__d__malloc;
