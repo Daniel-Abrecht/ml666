@@ -41,13 +41,15 @@ endif
 
 OBJECTS := $(patsubst %,build/$(TYPE)/o/%.o,$(SOURCES))
 
-.PHONY: all clean get-bin get-lib install uninstall shell test docs clean-docs install-docs uninstall-docs
+.PHONY: all bin lib docs clean get-bin get-lib install uninstall shell test clean-docs install-docs uninstall-docs
 
-all: bin/$(TYPE)/ml666-tokenizer-example \
-     bin/$(TYPE)/ml666 \
-     lib/$(TYPE)/libml666.a \
-     lib/$(TYPE)/libml666.so \
-     docs
+all: bin lib docs
+
+bin: bin/$(TYPE)/ml666-tokenizer-example \
+     bin/$(TYPE)/ml666
+
+lib: lib/$(TYPE)/libml666.a \
+     lib/$(TYPE)/libml666.so
 
 get-bin:
 	@echo bin/$(TYPE)/
@@ -109,6 +111,8 @@ uninstall-docs:
 	rm -f "$(DESTDIR)$(prefix)/share/man/man3/"ml666_*.3
 
 shell:
+	if [ -z "$$SHELL" ]; then SHELL="$$(getent passwd $$(id -u) | cut -d : -f 7)"; fi; \
+	if [ -z "$$SHELL" ]; then SHELL="/bin/sh"; fi; \
 	PROMPT_COMMAND='if [ -z "$$PS_SET" ]; then PS_SET=1; PS1="(ml666) $$PS1"; fi' \
 	LD_LIBRARY_PATH="$$PWD/lib/$(TYPE)/" \
 	PATH="$$PWD/bin/$(TYPE)/:$$PATH" \
