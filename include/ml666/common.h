@@ -47,7 +47,7 @@ struct ml666_buffer {
 };
 /** @} */
 
-/** \addtogroup ml666-hashed-buffer ml666_hased_buffer API
+/** \addtogroup ml666-hashed-buffer ml666_hashed_buffer API
  * @{
  */
 

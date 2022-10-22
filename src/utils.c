@@ -98,8 +98,12 @@ bool ml666_hashed_buffer__append_p(struct ml666_hashed_buffer__append_args args)
   if(!args.data.length)
     return true;
   uint64_t hash = ml666_hash_FNV_1a_append(args.data, args.buffer->buffer.length ? args.buffer->hash : ML666_FNV_OFFSET_BASIS);
-  if(!ml666_buffer__append((struct ml666_buffer*)&args.buffer->buffer, args.data, args.that, args.realloc))
-    return false;
+  if(!(args.append?args.append:ml666_buffer__append_p)((struct ml666_buffer__append_args){
+    .buffer = (struct ml666_buffer*)&args.buffer->buffer,
+    .data = args.data,
+    .that = args.that,
+    .realloc = args.realloc
+  })) return false;
   args.buffer->hash = hash;
   return true;
 }
