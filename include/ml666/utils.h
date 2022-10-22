@@ -5,6 +5,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+/** \addtogroup utils Utils
+ * @{ */
+
 #define ML666_B36 "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ" ///< Digits for base36 numbers
 #define ML666_B64 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=" ///< Digits for base64 encoded content
 
@@ -245,35 +248,53 @@ ML666_EXPORT struct ml666_buffer_info ml666_buffer__analyze(struct ml666_buffer_
 
 //// hashed_buffer_set api
 
+/** \addtogroup ml666-hashed-buffer-set ml666_hashed_buffer_set API
+ * @{ */
+
 // The first entry must be a struct ml666_hashed_buffer instance.
 struct ml666_hashed_buffer_set;
 struct ml666_hashed_buffer_set_entry;
 
+/**
+ * Used by \ref ml666_hashed_buffer_set__lookup.
+ */
 enum ml666_hashed_buffer_set_mode {
-  ML666_HBS_M_GET,
-  ML666_HBS_M_ADD_TAKE,
-  ML666_HBS_M_ADD_COPY,
+  ML666_HBS_M_GET, ///< Just search and return it
+  ML666_HBS_M_ADD_TAKE, ///< If it does not yet exist, create the entry and initialise it with the preexisting buffer data, the hashed buffer set will be responsible for freeing it now.
+  ML666_HBS_M_ADD_COPY, ///< If it does not yet exist, create the entry and initialise it with a copy of the buffer data. The caller stays resposnible for freeing it.
 };
 
+/** \see ml666_hashed_buffer_set__lookup */
 typedef const struct ml666_hashed_buffer_set_entry* ml666_hashed_buffer_set__cb__lookup(
   struct ml666_hashed_buffer_set* buffer_set,
   const struct ml666_hashed_buffer* entry,
   enum ml666_hashed_buffer_set_mode mode
 );
+/** \see ml666_hashed_buffer_set__put */
 typedef void ml666_hashed_buffer_set__cb__put(
   struct ml666_hashed_buffer_set* buffer_set,
   const struct ml666_hashed_buffer_set_entry*
 );
 
+/** \see ml666_hashed_buffer_set__destroy */
 typedef void ml666_hashed_buffer_set__cb__destroy(struct ml666_hashed_buffer_set* buffer_set);
 
-
+/**
+ * This is the ml666_hashed_buffer_set API interface.
+ * If you implement these callbacks, create your own instance of
+ * the \ref ml666_hashed_buffer_set struct or a factory for that,
+ * and set the cb field in there to the former, you can use your
+ * own implementation with any function taking a ml666_hashed_buffer_set.
+ */
 struct ml666_hashed_buffer_set_cb {
   ml666_hashed_buffer_set__cb__lookup* lookup;
   ml666_hashed_buffer_set__cb__put* put;
   ml666_hashed_buffer_set__cb__destroy* destroy;
 };
 
+/**
+ * A ml666_hashed_buffer_set. It stores unique instances of immutable buffers.
+ */
 struct ml666_hashed_buffer_set {
   const struct ml666_hashed_buffer_set_cb*const cb;
 };
@@ -302,6 +323,7 @@ static inline void ml666_hashed_buffer_set__destroy(struct ml666_hashed_buffer_s
   buffer_set->cb->destroy(buffer_set);
 }
 
+
 // Default implementation
 ML666_EXPORT struct ml666_hashed_buffer_set* ml666_get_default_hashed_buffer_set(void); // This returns a static buffer_set
 
@@ -317,6 +339,8 @@ ML666_EXPORT struct ml666_hashed_buffer_set* ml666_create_default_hashed_buffer_
 #define ml666_create_default_hashed_buffer_set(...) ml666_create_default_hashed_buffer_set_p((struct ml666_create_default_hashed_buffer_set_args){__VA_ARGS__})
 ////
 
+/** @} */
+
 
 // other stuff
 
@@ -329,5 +353,7 @@ ML666_EXPORT struct ml666_hashed_buffer_set* ml666_create_default_hashed_buffer_
 ML666_EXPORT ml666__cb__malloc  ml666__d__malloc;
 ML666_EXPORT ml666__cb__realloc ml666__d__realloc;
 ML666_EXPORT ml666__cb__free    ml666__d__free;
+
+/** @} */
 
 #endif

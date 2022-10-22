@@ -10,7 +10,9 @@
 #define ML666_EXPORT
 #endif
 
-/** \addtogroup ml666-buffer ml666_buffer API
+/** \addtogroup utils Utils
+ * @{
+ * \addtogroup ml666-buffer ml666_buffer API
  * @{
  */
 
@@ -68,5 +70,7 @@ struct ml666_hashed_buffer {
 typedef void* ml666__cb__malloc(void* that, size_t size);
 typedef void* ml666__cb__realloc(void* that, void* ptr, size_t size);
 typedef void  ml666__cb__free(void* that, void* ptr);
+
+/** @} */
 
 #endif
