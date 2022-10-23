@@ -368,7 +368,7 @@ struct ml666_default_hashed_buffer_set__create_args {
 ML666_EXPORT struct ml666_hashed_buffer_set* ml666_default_hashed_buffer_set__create_p(struct ml666_default_hashed_buffer_set__create_args); // This creates a buffer set with custom parameters
 /**
  * Create a an instance of the default implementation of a hashed_buffer_set.
- * \see ml666_default_hashed_buffer_set__create_args for the arguments (they're all optional, though).
+ * \see ml666_default_hashed_buffer_set__create_args for the arguments.  Please use designated initialisers for the optional arguments. (they're all optional, though).
  */
 #define ml666_default_hashed_buffer_set__create(...) ml666_default_hashed_buffer_set__create_p((struct ml666_default_hashed_buffer_set__create_args){__VA_ARGS__})
 ////

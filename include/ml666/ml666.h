@@ -1,6 +1,11 @@
 #ifndef ML666_H
 #define ML666_H
 
+/**
+ * \file
+ * This header includes all other ml666 headers.
+ */
+
 #include <ml666/utils.h>
 #include <ml666/common.h>
 #include <ml666/parser.h>
