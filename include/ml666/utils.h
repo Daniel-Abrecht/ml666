@@ -84,10 +84,10 @@ ML666_EXPORT bool ml666_utf8_validate(struct ml666_streaming_utf8_validator*rest
 
 /** \see ml666_buffer__dup */
 struct ml666_buffer__dup_args {
-  struct ml666_buffer* dest;          ///< Target buffer structure
-  struct ml666_buffer_ro src;         ///< The buffer to be copied
+  struct ml666_buffer* dest; ///< Target buffer structure
+  struct ml666_buffer_ro src;///< The buffer to be copied
   // Optional
-  void* that;                         ///< Optional. Userdefined parameter. Passed to all userdefined callbacks
+  void* that;                ///< Optional. Userdefined parameter. Passed to all userdefined callbacks
   ml666__cb__malloc* malloc; ///< Optional. Custom allocator
 };
 /** \see ml666_buffer__dup */
@@ -251,9 +251,12 @@ ML666_EXPORT struct ml666_buffer_info ml666_buffer__analyze(struct ml666_buffer_
 /** \addtogroup ml666-hashed-buffer-set ml666_hashed_buffer_set API
  * @{ */
 
-// The first entry must be a struct ml666_hashed_buffer instance.
 struct ml666_hashed_buffer_set;
-struct ml666_hashed_buffer_set_entry;
+/**
+ * Opaque structure, but the first entry must be a \ref ml666_hashed_buffer instance.
+ * Use \ref ml666_hashed_buffer_set__peek to access it.
+ */
+typedef struct ml666_hashed_buffer_set_entry ml666_hashed_buffer_set_entry;
 
 /**
  * Used by \ref ml666_hashed_buffer_set__lookup.
@@ -265,7 +268,7 @@ enum ml666_hashed_buffer_set_mode {
 };
 
 /** \see ml666_hashed_buffer_set__lookup */
-typedef const struct ml666_hashed_buffer_set_entry* ml666_hashed_buffer_set__cb__lookup(
+typedef const ml666_hashed_buffer_set_entry* ml666_hashed_buffer_set__cb__lookup(
   struct ml666_hashed_buffer_set* buffer_set,
   const struct ml666_hashed_buffer* entry,
   enum ml666_hashed_buffer_set_mode mode
@@ -273,7 +276,7 @@ typedef const struct ml666_hashed_buffer_set_entry* ml666_hashed_buffer_set__cb_
 /** \see ml666_hashed_buffer_set__put */
 typedef void ml666_hashed_buffer_set__cb__put(
   struct ml666_hashed_buffer_set* buffer_set,
-  const struct ml666_hashed_buffer_set_entry*
+  const ml666_hashed_buffer_set_entry*
 );
 
 /** \see ml666_hashed_buffer_set__destroy */
@@ -285,58 +288,89 @@ typedef void ml666_hashed_buffer_set__cb__destroy(struct ml666_hashed_buffer_set
  * the \ref ml666_hashed_buffer_set struct or a factory for that,
  * and set the cb field in there to the former, you can use your
  * own implementation with any function taking a ml666_hashed_buffer_set.
+ * You can also override the global default implementation.
+ * \see ml666_hashed_buffer_set__get_default
  */
 struct ml666_hashed_buffer_set_cb {
-  ml666_hashed_buffer_set__cb__lookup* lookup;
-  ml666_hashed_buffer_set__cb__put* put;
-  ml666_hashed_buffer_set__cb__destroy* destroy;
+  ml666_hashed_buffer_set__cb__lookup* lookup; ///< See \ref ml666_hashed_buffer_set__lookup
+  ml666_hashed_buffer_set__cb__put* put; ///< See \ref ml666_hashed_buffer_set__put
+  ml666_hashed_buffer_set__cb__destroy* destroy; ///< See \ref ml666_hashed_buffer_set__destroy
 };
 
 /**
  * A ml666_hashed_buffer_set. It stores unique instances of immutable buffers.
+ * \see ml666_hashed_buffer_set_cb
  */
 struct ml666_hashed_buffer_set {
   const struct ml666_hashed_buffer_set_cb*const cb;
 };
 
-
-static inline const struct ml666_hashed_buffer* ml666_hashed_buffer_set__peek(const struct ml666_hashed_buffer_set_entry* entry){
+/**
+ * \returns the \ref ml666_hashed_buffer containing the data of the \ref ml666_hashed_buffer_set_entry.
+ */
+static inline const struct ml666_hashed_buffer* ml666_hashed_buffer_set__peek(const ml666_hashed_buffer_set_entry* entry){
   return (const struct ml666_hashed_buffer*)entry;
 }
 
-static inline const struct ml666_hashed_buffer_set_entry* ml666_hashed_buffer_set__lookup(
-  struct ml666_hashed_buffer_set* buffer_set,
-  const struct ml666_hashed_buffer* buffer,
-  enum ml666_hashed_buffer_set_mode mode
+/**
+ * Lookup the \ref ml666_hashed_buffer_set_entry matching the buffer. It will take a reference which needs to be released using \ref ml666_hashed_buffer_set__put.
+ * Depending on the mode parameter, it may create the entry if none is found.
+ */
+static inline const ml666_hashed_buffer_set_entry* ml666_hashed_buffer_set__lookup(
+  struct ml666_hashed_buffer_set* buffer_set, ///< The buffer set. See \ref ml666_hashed_buffer_set__get_default for obtaining the default buffer set
+  const struct ml666_hashed_buffer* buffer, ///< The buffer to be searched
+  enum ml666_hashed_buffer_set_mode mode ///< If the buffer is just to be looked up, or if it is to be added if not found. See \ref ml666_hashed_buffer_set_mode
 ){
   return buffer_set->cb->lookup(buffer_set, buffer, mode);
 }
 
+/**
+ * Decreases the reference count of \ref ml666_hashed_buffer_set_entry and removes it when it hits 0.
+ */
 static inline void ml666_hashed_buffer_set__put(
-  struct ml666_hashed_buffer_set* buffer_set,
-  const struct ml666_hashed_buffer_set_entry* entry
+  struct ml666_hashed_buffer_set* buffer_set, ///< The buffer set. See \ref ml666_hashed_buffer_set__get_default for obtaining the default buffer set
+  const ml666_hashed_buffer_set_entry* entry ///< The buffer reference to be dereferenced
 ){
   buffer_set->cb->put(buffer_set, entry);
 }
 
+/**
+ * Frees the \ref ml666_hashed_buffer_set including all the entries.
+ * \param buffer_set The buffer set. See \ref ml666_hashed_buffer_set__get_default for obtaining the default buffer set
+ */
 static inline void ml666_hashed_buffer_set__destroy(struct ml666_hashed_buffer_set* buffer_set){
   buffer_set->cb->destroy(buffer_set);
 }
 
+/** \see ml666_hashed_buffer_set__get_default */
+typedef struct ml666_hashed_buffer_set* ml666_hashed_buffer_set__cb__get_default(void);
 
-// Default implementation
-ML666_EXPORT struct ml666_hashed_buffer_set* ml666_get_default_hashed_buffer_set(void); // This returns a static buffer_set
+/**
+ * Get the global default instance or the ml666_hashed_buffer_set. It's statically allocated.
+ *
+ * Usually, a weak symbol would be used to make this replacable, and I do like those a lot,
+ * but the behaviour of static and dynamic linkers isn't straight forward, making that a real pain.
+ * So this is a pointer. To replace it, just set it. You can use __attribute__((constructor)) to do so as early as possible.
+ * (It's also still a weak symbol, so if you do want to redefine it, you can do so)
+ */
+ML666_EXPORT extern ml666_hashed_buffer_set__cb__get_default* ml666_hashed_buffer_set__get_default;
 
-struct ml666_create_default_hashed_buffer_set_args {
+/** \see ml666_default_hashed_buffer_set__create */
+struct ml666_default_hashed_buffer_set__create_args {
   // Optional
   void* that;                              ///< Optional. Userdefined parameter. Passed to all userdefined callbacks
-  ml666__cb__malloc* malloc;
-  ml666__cb__free* free;
-  ml666_buffer__cb__dup_p* dup_buffer;
-  ml666_buffer__cb__clear_p* clear_buffer;
+  ml666__cb__malloc* malloc;               ///< Optional. Custom allocator.
+  ml666__cb__free* free;                   ///< Optional. Custom allocator.
+  ml666_buffer__cb__dup_p* dup_buffer;     ///< Optional. Custom function for dublicating buffers.
+  ml666_buffer__cb__clear_p* clear_buffer; ///< Optional. Custom function for clearing buffers.
 };
-ML666_EXPORT struct ml666_hashed_buffer_set* ml666_create_default_hashed_buffer_set_p(struct ml666_create_default_hashed_buffer_set_args); // This creates a buffer set with custom parameters
-#define ml666_create_default_hashed_buffer_set(...) ml666_create_default_hashed_buffer_set_p((struct ml666_create_default_hashed_buffer_set_args){__VA_ARGS__})
+/** \see ml666_default_hashed_buffer_set__create */
+ML666_EXPORT struct ml666_hashed_buffer_set* ml666_default_hashed_buffer_set__create_p(struct ml666_default_hashed_buffer_set__create_args); // This creates a buffer set with custom parameters
+/**
+ * Create a an instance of the default implementation of a hashed_buffer_set.
+ * \see ml666_default_hashed_buffer_set__create_args for the arguments (they're all optional, though).
+ */
+#define ml666_default_hashed_buffer_set__create(...) ml666_default_hashed_buffer_set__create_p((struct ml666_default_hashed_buffer_set__create_args){__VA_ARGS__})
 ////
 
 /** @} */
@@ -350,9 +384,9 @@ ML666_EXPORT struct ml666_hashed_buffer_set* ml666_create_default_hashed_buffer_
 #define ML666_LCPTR(X) (&((struct { __typeof__(X) x; }){X}).x) ///< Expression which makes a local copy of any value passed to it and returns a pointer to it
 #endif
 
-ML666_EXPORT ml666__cb__malloc  ml666__d__malloc;
-ML666_EXPORT ml666__cb__realloc ml666__d__realloc;
-ML666_EXPORT ml666__cb__free    ml666__d__free;
+ML666_EXPORT ml666__cb__malloc  ml666__d__malloc;  ///< Default malloc implementation
+ML666_EXPORT ml666__cb__realloc ml666__d__realloc; ///< Default realloc implementation
+ML666_EXPORT ml666__cb__free    ml666__d__free;    ///< Default free implementation
 
 /** @} */
 

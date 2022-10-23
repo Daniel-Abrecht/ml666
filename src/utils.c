@@ -20,7 +20,7 @@ struct ml666_hashed_buffer_set_default {
   struct ml666_hashed_buffer_set super;
   size_t entry_count;
   struct ml666_hashed_buffer_set_entry* (*bucket)[BUCKET_COUNT];
-  struct ml666_create_default_hashed_buffer_set_args a;
+  struct ml666_default_hashed_buffer_set__create_args a;
 };
 
 static unsigned hash_to_bucket(uint64_t hash){
@@ -300,7 +300,7 @@ static struct ml666_hashed_buffer_set_default default_buffer_set = {
   }
 };
 
-struct ml666_hashed_buffer_set* ml666_create_default_hashed_buffer_set_p(struct ml666_create_default_hashed_buffer_set_args args){
+struct ml666_hashed_buffer_set* ml666_default_hashed_buffer_set__create_p(struct ml666_default_hashed_buffer_set__create_args args){
   if(!args.malloc)
     args.malloc = ml666__d__malloc;
   if(!args.free)
@@ -333,9 +333,10 @@ void ml666_hashed_buffer_set__d__destroy(struct ml666_hashed_buffer_set* _buffer
     buffer_set->a.free(buffer_set->a.that, buffer_set);
 }
 
-struct ml666_hashed_buffer_set* ml666_get_default_hashed_buffer_set(void){
+static struct ml666_hashed_buffer_set* get_default(void){
   return &default_buffer_set.super;
 }
+__attribute__((weak)) ml666_hashed_buffer_set__cb__get_default* ml666_hashed_buffer_set__get_default = &get_default;
 
 bool ml666_utf8_validate(struct ml666_streaming_utf8_validator*restrict const v, const int _ch){
   const uint_least8_t ch = _ch & 0xFF;

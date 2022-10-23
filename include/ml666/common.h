@@ -67,8 +67,31 @@ struct ml666_hashed_buffer {
 };
 /** @} */
 
+/**
+ * Callback for allocating memory.
+ * \see ml666__d__malloc for the default implementation
+ * \param that Userdefined
+ * \param size The size of the memory region to be allocated
+ * \returns the new memory region or 0 if an error occured
+ */
 typedef void* ml666__cb__malloc(void* that, size_t size);
+
+/**
+ * Callback for allocating, resizing & freeing memory.
+ * \see ml666__d__realloc for the default implementation
+ * \param that Userdefined
+ * \param ptr The old memory region
+ * \param size The new size of the memory region
+ * \returns the new memory region or 0 if an error occured
+ */
 typedef void* ml666__cb__realloc(void* that, void* ptr, size_t size);
+
+/**
+ * Callback for freeing memory.
+ * \see ml666__d__free for the default implementation
+ * \param that Userdefined
+ * \param ptr The memory region to be freed
+ */
 typedef void  ml666__cb__free(void* that, void* ptr);
 
 /** @} */

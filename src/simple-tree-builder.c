@@ -384,7 +384,7 @@ ML666_ST_IMPLEMENTATION(ml666_default, ml666_st__d_)
 
 struct ml666_st_builder* ml666_st_builder_create_p(struct ml666_st_builder_create_args args){
   if(!args.buffer_set)
-    args.buffer_set = ml666_get_default_hashed_buffer_set();
+    args.buffer_set = ml666_hashed_buffer_set__get_default();
   if(!args.malloc)
     args.malloc = ml666__d__malloc;
   if(!args.free)
