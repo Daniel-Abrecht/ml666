@@ -6,6 +6,16 @@
 #include <stddef.h>
 #include <ml666/tokenizer.h>
 
+/**
+ * \addtogroup tokenizer Tokenizer
+ * @{
+ * \addtogroup ml666-tokenizer ML666 Tokenizer API
+ * @{
+ * \addtogroup json-token-emmiter JSON Token Emmiter
+ * Implements the \ref ml666-tokenizer on top of the \ref ml666-json-tokenizer.
+ * @{
+ */
+
 struct ml666_json_token_emmiter_create_args {
   int fd;
   void* user_ptr;
@@ -15,5 +25,9 @@ struct ml666_json_token_emmiter_create_args {
 };
 ML666_EXPORT struct ml666_tokenizer* ml666_json_token_emmiter_create_p(struct ml666_json_token_emmiter_create_args args);
 #define ml666_json_token_emmiter_create(...) ml666_json_token_emmiter_create_p((struct ml666_json_token_emmiter_create_args){__VA_ARGS__})
+
+/** @} */
+/** @} */
+/** @} */
 
 #endif
