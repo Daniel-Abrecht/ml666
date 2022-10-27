@@ -41,13 +41,14 @@ ML666_EXPORT extern const char*const ml666__token_name[ML666_TOKEN_COUNT];
  * To create your own, just create an instance of this script and implement and set \ref ml666_tokenizer_cb.
  */
 struct ml666_tokenizer {
-  const struct ml666_tokenizer_cb*const cb;
-  enum ml666_token token;
-  struct ml666_buffer_ro match;
-  bool complete;
-  const char* error;
-  size_t line, column;
-  void* user_ptr;
+  const struct ml666_tokenizer_cb*const cb;  ///< The callbacks for this tokenizer implementation
+  enum ml666_token token; ///< set if a token was retuned to the token
+  struct ml666_buffer_ro match; ///< a buffer containing a chunk of the content of the matched token
+  bool complete; ///< If the token is complete, or if there is more to come
+  const char* error; ///< If an error occurs, this will be set to an error message.
+  size_t line; ///< The current line being processed.
+  size_t column; ///< The current column being processed.
+  void* user_ptr; ///< A userspecified pointer
 };
 
 typedef bool ml666_tokenizer_cb_next(struct ml666_tokenizer* tokenizer); ///< \see ml666_tokenizer_next
@@ -66,11 +67,12 @@ struct ml666_tokenizer_cb {
 
 /** \see ml666_tokenizer_create */
 struct ml666_tokenizer_create_args {
-  int fd;
-  void* user_ptr;
-  ml666__cb__malloc* malloc;
-  ml666__cb__free*   free;
-  bool disable_utf8_validation;
+  int fd; ///< The file descriptor to use. Only used if parser and tokenizer is not set. The ml666_tokenizer will take care of the cleanup (close the fd).
+  // Optional
+  bool disable_utf8_validation; ///< Optional. Can be used to disable the utf8 validation of the ml666 document.
+  void* user_ptr; ///< Optional. A userspecified pointer.
+  ml666__cb__malloc* malloc; ///< Optional. Custom allocator.
+  ml666__cb__free*   free; ///< Optional. Custom allocator.
 };
 /** \see ml666_tokenizer_create */
 ML666_EXPORT struct ml666_tokenizer* ml666_tokenizer_create_p(struct ml666_tokenizer_create_args args);
@@ -83,11 +85,21 @@ ML666_EXPORT struct ml666_tokenizer* ml666_tokenizer_create_p(struct ml666_token
 
 /** @} */
 
-// returns false on EOF
+/**
+ * Continue processing data. This may block unless the file descriptor it's reading from is non-blocking.
+ * If there is a new token, tokenizer->token will be set, and the preprocessed content of the token is returned in tokeniser->match.
+ * If tokeniser->complete is not set, this is only part of the token, and the next chunk of the token will be made available in future calls.
+ *
+ * If there is an error, it returns false and sets tokenizer->error.
+ * \returns true if it's not done yet, false otherwise
+ */
 static inline bool ml666_tokenizer_next(struct ml666_tokenizer* tokenizer){
   return tokenizer->cb->next(tokenizer);
 }
 
+/**
+ * Destroys the \ref ml666_tokenizer instance.
+ */
 static inline void ml666_tokenizer_destroy(struct ml666_tokenizer* tokenizer){
   tokenizer->cb->destroy(tokenizer);
 }
