@@ -5,9 +5,11 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-/** \addtogroup simple-tree-builder
+/**
+ * \addtogroup ml666-simple-tree
  * @{
- * \addtogroup ml666-simple-tree-parser ml666_simple_tree_parser API
+ * \addtogroup ml666-simple-tree-parser ML666 Simple Tree Parser API
+ * \ingroup ml666-parser
  * @{ */
 
 /**
@@ -94,7 +96,7 @@ static inline struct ml666_st_document* ml666_simple_tree_parser_take_document(s
  * Make sure the underlying file descrition is in blocking mode, or it'll waste lots of CPU time.
  *
  * \see ml666_simple_tree_parser_create_args for the arguments
- * \returns the \ref ml666_st_document document
+ * \returns the \ref ml666_st_document_t document
  */
 #define ml666_st_parse(...) ml666_st_parse_p((struct ml666_simple_tree_parser_create_args){__VA_ARGS__})
 /** \see ml666_st_parse */

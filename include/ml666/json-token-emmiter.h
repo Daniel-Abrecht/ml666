@@ -7,9 +7,9 @@
 #include <ml666/tokenizer.h>
 
 /**
- * \addtogroup tokenizer Tokenizer
+ * \addtogroup tokenizer
  * @{
- * \addtogroup ml666-tokenizer ML666 Tokenizer API
+ * \addtogroup ml666-tokenizer
  * @{
  * \addtogroup json-token-emmiter JSON Token Emmiter
  * Implements the \ref ml666-tokenizer on top of the \ref ml666-json-tokenizer.

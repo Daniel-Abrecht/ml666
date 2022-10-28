@@ -5,6 +5,13 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+/**
+ * \addtogroup ml666-simple-tree
+ * @{
+ * \addtogroup ml666-simple-tree-serializer ML666 Simple Tree Serializer API
+ * @{
+*/
+
 struct ml666_st_serializer {
   const struct ml666_st_serializer_cb*const cb;
   struct ml666_st_builder*const stb;
@@ -38,5 +45,8 @@ static inline bool ml666_st_serialize(struct ml666_st_serializer* serializer){
   }
   return true;
 }
+
+/** @} */
+/** @} */
 
 #endif

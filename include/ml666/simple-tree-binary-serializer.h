@@ -3,6 +3,16 @@
 
 #include <ml666/simple-tree-serializer.h>
 
+/**
+ * \addtogroup ml666-simple-tree
+ * @{
+ * \addtogroup ml666-simple-tree-serializer
+ * @{
+ * \addtogroup ml666-simple-tree-binary-serializer Binary Serializer
+ * Implementation of \ref ml666-simple-tree-serializer for dumping \ref ml666_st_content_t raw.
+ * @{
+*/
+
 struct ml666_st_binary_serializer_create_args {
   int fd;
   struct ml666_st_builder* stb;

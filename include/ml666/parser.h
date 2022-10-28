@@ -5,6 +5,13 @@
 #include <stdbool.h>
 #include <ml666/common.h>
 
+/** \addtogroup parser Parser
+ * @{ */
+/** \addtogroup ml666-parser ML666 Streaming Parser API
+ * This is the API for a Streaming ML666 Parser.
+ * You may also be interested in the \ref ml666-simple-tree-parser, which builds a tree structure using this parser.
+ * @{ */
+
 
 struct ml666_parser {
   const struct ml666_parser_cb*const cb;
@@ -111,5 +118,7 @@ ML666_EXPORT ml666_parser_api_tag_name_free         ml666_parser__d_mal__tag_nam
 ML666_EXPORT ml666_parser_api_attribute_name_append ml666_parser__d_mal__attribute_name_append;
 ML666_EXPORT ml666_parser_api_attribute_name_free   ml666_parser__d_mal__attribute_name_free;
 
+/** @} */
+/** @} */
 
 #endif

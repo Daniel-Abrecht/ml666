@@ -6,6 +6,13 @@
 #include <stddef.h>
 #include <ml666/common.h>
 
+/**
+ * \addtogroup tokenizer
+ * @{
+ * \addtogroup ml666-json-tokenizer JSON Tokenizer API
+ * @{
+ */
+
 #define ML666__JSON_TOKENS \
   X(ML666_JSON_NONE) \
   X(ML666_JSON_EOF) \
@@ -66,5 +73,8 @@ static inline bool ml666_json_tokenizer_next(struct ml666_json_tokenizer* tokeni
 static inline void ml666_json_tokenizer_destroy(struct ml666_json_tokenizer* tokenizer){
   tokenizer->cb->destroy(tokenizer);
 }
+
+/** @} */
+/** @} */
 
 #endif
