@@ -28,4 +28,8 @@ struct ml666_st_binary_serializer_create_args {
 ML666_EXPORT struct ml666_st_serializer* ml666_st_binary_serializer_create_p(struct ml666_st_binary_serializer_create_args args);
 #define ml666_st_binary_serializer_create(...) ml666_st_binary_serializer_create_p((struct ml666_st_binary_serializer_create_args){__VA_ARGS__})
 
+/** @} */
+/** @} */
+/** @} */
+
 #endif
