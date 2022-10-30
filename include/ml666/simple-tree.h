@@ -110,7 +110,19 @@ typedef struct ml666_st_content ml666_st_content_t;
  */
 typedef struct ml666_st_comment ml666_st_comment_t;
 
-
+/**
+ * The ml666_st_builder.
+ * An instance of the default implementation can be optained using the \ref ml666_st_builder_create function.
+ *
+ * If you want to create your own implementation,
+ * just implement the callbacks in \ref ml666_simple_tree_parser_cb
+ * and create your own \ref ml666_simple_tree_parser instance.
+ * There are some helpful macros for declaring and defining the necessary datastructures,
+ * the compiler will tell you about any functions which still need to be implemented.
+ * \see \ref ml666-simple-tree
+ * \see ML666_ST_DECLARATION
+ * \see ML666_ST_IMPLEMENTATION
+ */
 typedef struct ml666_st_builder {
   const struct ml666_st_cb*const cb;
   void* user_ptr;
@@ -305,6 +317,11 @@ enum ml666_st_attribute_lookup_flags {
   ML666_EXPORT extern const struct ml666_st_cb NAME ## _st_api; \
   ML666__ST_CB(ML666__ST_DECLARATION_SUB, PREFIX)
 
+/**
+ * Creates a ml666_st_cb and fills in all the members.
+ * Also includes \ref ML666_ST_DECLARATION
+ * \see ML666_ST_DECLARATION for the details on how the members are called and so on.
+ */
 #define ML666_ST_IMPLEMENTATION(NAME, PREFIX) \
   ML666_ST_DECLARATION(NAME, PREFIX) \
   const struct ml666_st_cb NAME ## _st_api = { \
@@ -331,39 +348,58 @@ struct ml666_st_cb {
 
 // Simple wrappers
 
+/**
+ * Destroys a ml666_st_builder instance. This must be done after all the nodes created using it have been destroyed.
+ * \memberof ml666_st_builder
+ */
 static inline void ml666_st_builder_destroy(struct ml666_st_builder* stb){
   stb->cb->builder_destroy(stb);
 }
 
 /**
+ * Decrements the refcount of a node. The node is freed when the ref count hits 0.
  * \memberof ml666_st_node
- * @{
  */
 static inline void ml666_st_node_put(struct ml666_st_builder* stb, struct ml666_st_node* node){
   stb->cb->node_put(stb, node);
 }
+/**
+ * Increments the refcount of a node.
+ * \memberof ml666_st_node
+ */
 static inline bool ml666_st_node_ref(struct ml666_st_builder* stb, struct ml666_st_node* node){
   return stb->cb->node_ref(stb, node);
 }
-/** @} */
 
 /**
+ * Add a \ref ml666_st_member to an \ref ml666_st_node, optionaly before some other \ref ml666_st_member
  * \memberof ml666_st_member
- * @{
+ * \param stb The simple tree builder instance used to create the nodes
+ * \param parent The node to which the member node is to be added
+ * \param member The node to be added to parent
+ * \param before If set, this must be a child node of the parent node, the new node is to be added before this one
  */
 static inline bool ml666_st_member_set(struct ml666_st_builder* stb, struct ml666_st_node* parent, struct ml666_st_member* member, struct ml666_st_member* before){
   return stb->cb->member_set(stb, parent, member, before);
 }
+/**
+ * \memberof ml666_st_member
+ */
 static inline struct ml666_st_node* ml666_st_member_get_parent(struct ml666_st_builder* stb, struct ml666_st_member* node){
   return stb->cb->member_get_parent(stb, node);
 }
+/**
+ * \memberof ml666_st_member
+ */
 static inline struct ml666_st_member* ml666_st_member_get_previous(struct ml666_st_builder* stb, struct ml666_st_member* node){
   return stb->cb->member_get_previous(stb, node);
 }
+/**
+ * \memberof ml666_st_member
+ */
 static inline struct ml666_st_member* ml666_st_member_get_next(struct ml666_st_builder* stb, struct ml666_st_member* node){
   return stb->cb->member_get_next(stb, node);
 }
-/** @} */
 
 /**
  * \memberof ml666_st_document

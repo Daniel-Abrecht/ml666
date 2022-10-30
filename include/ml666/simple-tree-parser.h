@@ -13,8 +13,8 @@
  * @{ */
 
 /**
- * The ml666_simple_tree_parser instance.
- * An instance of the default implementation can eb implemented using the \ref ml666_simple_tree_parser_create function.
+ * The ml666_simple_tree_parser.
+ * An instance of the default implementation can be optained using the \ref ml666_simple_tree_parser_create function.
  *
  * If you want to create your own implementation,
  * just implement the callbacks in \ref ml666_simple_tree_parser_cb
