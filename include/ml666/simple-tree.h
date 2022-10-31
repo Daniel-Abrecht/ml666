@@ -119,6 +119,7 @@ typedef struct ml666_st_comment ml666_st_comment_t;
  * and create your own \ref ml666_simple_tree_parser instance.
  * There are some helpful macros for declaring and defining the necessary datastructures,
  * the compiler will tell you about any functions which still need to be implemented.
+ *
  * \see \ref ml666-simple-tree
  * \see ML666_ST_DECLARATION
  * \see ML666_ST_IMPLEMENTATION
@@ -359,6 +360,8 @@ static inline void ml666_st_builder_destroy(struct ml666_st_builder* stb){
 /**
  * Decrements the refcount of a node. The node is freed when the ref count hits 0.
  * \memberof ml666_st_node
+ * \param stb The simple tree builder instance used to create the node
+ * \param node The node whos refcount is to be decremented
  */
 static inline void ml666_st_node_put(struct ml666_st_builder* stb, struct ml666_st_node* node){
   stb->cb->node_put(stb, node);
@@ -366,6 +369,8 @@ static inline void ml666_st_node_put(struct ml666_st_builder* stb, struct ml666_
 /**
  * Increments the refcount of a node.
  * \memberof ml666_st_node
+ * \param stb The simple tree builder instance used to create the node
+ * \param node The node whos refcount is to be incremented
  */
 static inline bool ml666_st_node_ref(struct ml666_st_builder* stb, struct ml666_st_node* node){
   return stb->cb->node_ref(stb, node);
@@ -383,43 +388,61 @@ static inline bool ml666_st_member_set(struct ml666_st_builder* stb, struct ml66
   return stb->cb->member_set(stb, parent, member, before);
 }
 /**
+ * Get the parent of a node.
  * \memberof ml666_st_member
+ * \param stb The simple tree builder instance used to create the node
+ * \param node The node whos parent is to be returned
+ * \returns the parent node or 0 if it doesn't have one.
  */
 static inline struct ml666_st_node* ml666_st_member_get_parent(struct ml666_st_builder* stb, struct ml666_st_member* node){
   return stb->cb->member_get_parent(stb, node);
 }
 /**
+ * Get the node before this one. That is, the child node of the parent which comes before this one.
+ *
  * \memberof ml666_st_member
+ * \param stb The simple tree builder instance used to create the node
+ * \param node The node
+ * \returns the preceeding node or 0 if there is none.
  */
 static inline struct ml666_st_member* ml666_st_member_get_previous(struct ml666_st_builder* stb, struct ml666_st_member* node){
   return stb->cb->member_get_previous(stb, node);
 }
 /**
+ * Get the node after this one. That is, the child node of the parent which comes after this one.
+ *
  * \memberof ml666_st_member
+ * \param stb The simple tree builder instance used to create the node
+ * \param node The node
+ * \returns the following node or 0 if there is none.
  */
 static inline struct ml666_st_member* ml666_st_member_get_next(struct ml666_st_builder* stb, struct ml666_st_member* node){
   return stb->cb->member_get_next(stb, node);
 }
 
 /**
+ * Create a document node.
  * \memberof ml666_st_document
  */
 static inline struct ml666_st_document* ml666_st_document_create(struct ml666_st_builder* stb){
   return stb->cb->document_create(stb);
 }
 /**
+ * Create an element node.
  * \memberof ml666_st_element
  */
 static inline struct ml666_st_element* ml666_st_element_create(struct ml666_st_builder* stb, const struct ml666_hashed_buffer* entry, bool copy_name){
   return stb->cb->element_create(stb, entry, copy_name);
 }
 /**
+ * Create a content node.
  * \memberof ml666_st_content
  */
 static inline struct ml666_st_content* ml666_st_content_create(struct ml666_st_builder* stb){
   return stb->cb->content_create(stb);
 }
 /**
+ * Create a comment node.
  * \memberof ml666_st_comment
  */
 static inline struct ml666_st_comment* ml666_st_comment_create(struct ml666_st_builder* stb){
@@ -427,32 +450,52 @@ static inline struct ml666_st_comment* ml666_st_comment_create(struct ml666_st_b
 }
 
 /**
+ * Get the child list of a document node.
+ * It may be easier to just use \ref ML666_ST_CHILDREN instead.
  * \memberof ml666_st_document
+ * \param stb The simple tree builder instance used to create the node
+ * \param node The document node
+ * \see ML666_ST_CHILDREN
+ * \see ML666_ST_U_CHILDREN
  */
 static inline struct ml666_st_children* ml666_st_document_get_children(struct ml666_st_builder* stb, struct ml666_st_document* node){
   return stb->cb->document_get_children(stb, node);
 }
 /**
+ * Get the child list of a element node.
+ * It may be easier to just use \ref ML666_ST_CHILDREN instead.
  * \memberof ml666_st_element
+ * \param stb The simple tree builder instance used to create the node
+ * \param node The element node
+ * \see ML666_ST_CHILDREN
+ * \see ML666_ST_U_CHILDREN
  */
 static inline struct ml666_st_children* ml666_st_element_get_children(struct ml666_st_builder* stb, struct ml666_st_element* node){
   return stb->cb->element_get_children(stb, node);
 }
 
 /**
+ * Get the name of the element as an \ref ml666_hashed_buffer_set_entry.
+ * This will not increment it's reference count. The element node will hold a reference already,
+ * so as long as the element is referenced, so is it's name. But reference it if you need it longer than that.
+ *
  * \memberof ml666_st_element
- * @{
  */
 static inline const struct ml666_hashed_buffer_set_entry* ml666_st_element_get_name(struct ml666_st_builder* stb, struct ml666_st_element* node){
   return stb->cb->element_get_name(stb, node);
 }
+/**
+ * \memberof ml666_st_element
+ */
 static inline struct ml666_st_attribute* ml666_st_attribute_lookup(struct ml666_st_builder* stb, struct ml666_st_element* element, const struct ml666_hashed_buffer* name, enum ml666_st_attribute_lookup_flags flags){
   return stb->cb->attribute_lookup(stb, element, name, flags);
 }
+/**
+ * \memberof ml666_st_element
+ */
 static inline struct ml666_st_attribute* ml666_st_attribute_get_first(const struct ml666_st_builder* stb, const struct ml666_st_element* element){
   return stb->cb->attribute_get_first(stb, element);
 }
-/** @} */
 
 /**
  * \memberof ml666_st_content
