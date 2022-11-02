@@ -1,3 +1,4 @@
+#include <ml666/refcount.h>
 #include <ml666/utils.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -12,13 +13,13 @@ static ml666_hashed_buffer_set__cb__destroy ml666_hashed_buffer_set__d__destroy;
 
 struct ml666_hashed_buffer_set_entry {
   struct ml666_hashed_buffer data;
-  size_t refcount;
+  struct ml666_refcount refcount;
   struct ml666_hashed_buffer_set_entry* next;
 };
 
 struct ml666_hashed_buffer_set_default {
   struct ml666_hashed_buffer_set super;
-  size_t entry_count;
+  struct ml666_refcount entry_count;
   struct ml666_hashed_buffer_set_entry* (*bucket)[BUCKET_COUNT];
   struct ml666_default_hashed_buffer_set__create_args a;
 };
@@ -172,20 +173,25 @@ struct ml666_buffer_info ml666_buffer__analyze(struct ml666_buffer_ro buffer){
   return bi;
 }
 
+static inline void destroy_entry(struct ml666_hashed_buffer_set_default* buffer_set, struct ml666_hashed_buffer_set_entry** it){
+  struct ml666_hashed_buffer_set_entry* cur = *it;
+  *it = cur->next;
+  ml666_hashed_buffer__clear(&cur->data, buffer_set->a.that, buffer_set->a.free, buffer_set->a.clear_buffer);
+  buffer_set->a.free(buffer_set->a.that, cur);
+  if(!ml666_refcount_decrement(&buffer_set->entry_count))
+    buffer_set->a.free(buffer_set->a.that, buffer_set->bucket);
+}
+
 void ml666_hashed_buffer_set__d__put(struct ml666_hashed_buffer_set* _buffer_set, const struct ml666_hashed_buffer_set_entry* _entry){
   struct ml666_hashed_buffer_set_default* buffer_set = (struct ml666_hashed_buffer_set_default*)_buffer_set;
   struct ml666_hashed_buffer_set_entry* entry = (struct ml666_hashed_buffer_set_entry*)_entry;
-  if((entry->refcount -= 1))
+  if(ml666_refcount_decrement(&entry->refcount))
     return;
   unsigned bucket = hash_to_bucket(entry->data.hash);
   for(struct ml666_hashed_buffer_set_entry **it=&(*buffer_set->bucket)[bucket], *cur; (cur=*it); it=&cur->next){
     if(cur != entry)
       continue;
-    *it = cur->next;
-    ml666_hashed_buffer__clear(&cur->data, buffer_set->a.that, buffer_set->a.free, buffer_set->a.clear_buffer);
-    buffer_set->a.free(buffer_set->a.that, cur);
-    if(!(buffer_set->entry_count -= 1))
-      buffer_set->a.free(buffer_set->a.that, buffer_set->bucket);
+    destroy_entry(buffer_set, it);
     return;
   }
   fprintf(stderr, "%s:%u: error: entry not found in set\n", __FILE__, __LINE__);
@@ -198,7 +204,7 @@ const struct ml666_hashed_buffer_set_entry* ml666_hashed_buffer_set__d__lookup(
   enum ml666_hashed_buffer_set_mode mode
 ){
   struct ml666_hashed_buffer_set_default* buffer_set = (struct ml666_hashed_buffer_set_default*)_buffer_set;
-  if(!buffer_set->entry_count){
+  if(ml666_refcount_is_zero(&buffer_set->entry_count)){
     if(mode == ML666_HBS_M_GET)
       return 0;
     buffer_set->bucket = buffer_set->a.malloc(buffer_set->a.that, sizeof(*buffer_set->bucket));
@@ -208,7 +214,7 @@ const struct ml666_hashed_buffer_set_entry* ml666_hashed_buffer_set__d__lookup(
     }
     memset(buffer_set->bucket, 0, sizeof(*buffer_set->bucket));
   }
-  buffer_set->entry_count += 1;
+  ml666_refcount_increment(&buffer_set->entry_count);
 
   struct ml666_hashed_buffer c = *entry;
   unsigned bucket = hash_to_bucket(c.hash);
@@ -253,18 +259,16 @@ const struct ml666_hashed_buffer_set_entry* ml666_hashed_buffer_set__d__lookup(
   }else{
     result->data = *entry;
   }
-  result->refcount = 1;
+  result->refcount.value = 0;
+  ml666_refcount_increment(&result->refcount);
   result->next = cur;
   *it = result;
   return result;
 
 found:;
-  const size_t refcount = cur->refcount + 1;
-  if(!refcount)
-    return false;
-  cur->refcount = refcount;
+  ml666_refcount_increment(&cur->refcount);
   if(0) out: cur=0;
-  if(!(buffer_set->entry_count -= 1))
+  if(!ml666_refcount_decrement(&buffer_set->entry_count))
     buffer_set->a.free(buffer_set->a.that, buffer_set->bucket);
   return cur;
 }
@@ -323,12 +327,9 @@ struct ml666_hashed_buffer_set* ml666_default_hashed_buffer_set__create_p(struct
 void ml666_hashed_buffer_set__d__destroy(struct ml666_hashed_buffer_set* _buffer_set){
   struct ml666_hashed_buffer_set_default* buffer_set = (struct ml666_hashed_buffer_set_default*)_buffer_set;
   struct ml666_hashed_buffer_set_entry** bucket = *buffer_set->bucket;
-  for(unsigned i=0; i<BUCKET_COUNT; i++){
-    for(struct ml666_hashed_buffer_set_entry* entry; (entry=bucket[i]); ){
-      entry->refcount = 1;
-      ml666_hashed_buffer_set__put(&buffer_set->super, entry);
-    }
-  }
+  for(unsigned i=0; i<BUCKET_COUNT; i++)
+    while(bucket[i])
+      destroy_entry(buffer_set, &bucket[i]);
   if(buffer_set != &default_buffer_set)
     buffer_set->a.free(buffer_set->a.that, buffer_set);
 }

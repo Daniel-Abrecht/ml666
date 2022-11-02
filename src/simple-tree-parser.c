@@ -47,7 +47,8 @@ static bool tag_push(struct ml666_parser* parser, ml666_opaque_tag_name* name){
     return false;
   }
   ml666_st_node_put(stp->public.stb, ML666_ST_NODE(element));
-  return ml666_st_node_ref_set(stp->public.stb, &stp->cur, ML666_ST_NODE(element));
+  ml666_st_node_ref_set(stp->public.stb, &stp->cur, ML666_ST_NODE(element));
+  return true;
 }
 
 static bool end_tag_check(struct ml666_parser* parser, ml666_opaque_tag_name name){
@@ -77,7 +78,8 @@ static bool tag_pop(struct ml666_parser* parser){
   stp->current_content = 0;
   stp->current_comment = 0;
   stp->current_attribute = 0;
-  return ml666_st_node_ref_set(stp->public.stb, &stp->cur, parent);
+  ml666_st_node_ref_set(stp->public.stb, &stp->cur, parent);
+  return true;
 }
 
 static bool data_append(struct ml666_parser* parser, struct ml666_buffer_ro data){

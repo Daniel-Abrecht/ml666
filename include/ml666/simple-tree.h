@@ -259,7 +259,7 @@ enum ml666_st_attribute_lookup_flags {
   X(builder_destroy /** \see ml666_st_builder_destroy */, void, (struct ml666_st_builder* stb), __VA_ARGS__) \
   \
   X(node_put /** \see ml666_st_node_put */, void, (struct ml666_st_builder* stb, struct ml666_st_node* node), __VA_ARGS__) \
-  X(node_ref /** \see ml666_st_node_ref */, bool, (struct ml666_st_builder* stb, struct ml666_st_node* node), __VA_ARGS__) \
+  X(node_ref /** \see ml666_st_node_ref */, void, (struct ml666_st_builder* stb, struct ml666_st_node* node), __VA_ARGS__) \
   \
   X(member_set /** \see ml666_st_member_set */, bool, (struct ml666_st_builder* stb, struct ml666_st_node* parent, struct ml666_st_member* member, struct ml666_st_member* before), __VA_ARGS__) \
   \
@@ -372,8 +372,8 @@ static inline void ml666_st_node_put(struct ml666_st_builder* stb, struct ml666_
  * \param stb The simple tree builder instance used to create the node
  * \param node The node whos refcount is to be incremented
  */
-static inline bool ml666_st_node_ref(struct ml666_st_builder* stb, struct ml666_st_node* node){
-  return stb->cb->node_ref(stb, node);
+static inline void ml666_st_node_ref(struct ml666_st_builder* stb, struct ml666_st_node* node){
+  stb->cb->node_ref(stb, node);
 }
 
 /**
@@ -581,14 +581,13 @@ static inline bool ml666_st_is_member(const struct ml666_st_node* node){
 /**
  * \memberof ml666_st_node
  */
-static inline bool ml666_st_node_ref_set(struct ml666_st_builder* stb, struct ml666_st_node** dest, struct ml666_st_node* src){
-  if(src && !stb->cb->node_ref(stb, src))
-    return false;
+static inline void ml666_st_node_ref_set(struct ml666_st_builder* stb, struct ml666_st_node** dest, struct ml666_st_node* src){
+  if(src)
+    stb->cb->node_ref(stb, src);
   struct ml666_st_node* old = *dest;
+  *dest = src;
   if(old)
     stb->cb->node_put(stb, old);
-  *dest = src;
-  return true;
 }
 
 /**

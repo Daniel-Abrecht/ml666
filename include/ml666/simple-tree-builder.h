@@ -2,6 +2,7 @@
 #define ML666_SIMPLE_TREE_BUILDER_H
 
 #include <ml666/simple-tree.h>
+#include <ml666/refcount.h>
 #include <assert.h>
 
 /**
@@ -44,7 +45,7 @@ ML666_EXPORT struct ml666_st_builder* ml666_st_builder_create_p(struct ml666_st_
   \
   struct ml666_st_node { \
     enum ml666_st_node_type type; \
-    size_t refcount; \
+    struct ml666_refcount refcount; \
   }; \
   \
   struct ml666_st_member { \

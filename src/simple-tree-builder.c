@@ -17,7 +17,7 @@ struct ml666_st_builder_default {
 
 void ml666_st__d__node_put(struct ml666_st_builder* _stb, struct ml666_st_node* node){
   struct ml666_st_builder_default* stb = (struct ml666_st_builder_default*)_stb;
-  if((node->refcount -= 1))
+  if(ml666_refcount_decrement(&node->refcount))
     return;
   switch(node->type){
     case ML666_ST_NT_DOCUMENT: break;
@@ -39,11 +39,9 @@ void ml666_st__d__node_put(struct ml666_st_builder* _stb, struct ml666_st_node* 
   stb->a.free(stb->public.user_ptr, node);
 }
 
-bool ml666_st__d__node_ref(struct ml666_st_builder* stb, struct ml666_st_node* node){
+void ml666_st__d__node_ref(struct ml666_st_builder* stb, struct ml666_st_node* node){
   (void)stb;
-  if(!(node->refcount += 1))
-    return false;
-  return true;
+  ml666_refcount_increment(&node->refcount);
 }
 
 enum ml666_st_node_type ml666_st__d__node_get_type(struct ml666_st_builder* stb, struct ml666_st_node* node){
@@ -167,18 +165,12 @@ bool ml666_st__d__member_set(
     return false;
   struct ml666_st_node* old_parent = member->parent;
   if(!old_parent){
-    if(!ml666_st__d__node_ref(stb, &member->node))
-      return false;
-    if(!children->first){
-      if(!ml666_st__d__node_ref(stb, parent)){
-        ml666_st__d__node_put(stb, &member->node);
-        return false;
-      }
-    }
+    ml666_st__d__node_ref(stb, &member->node);
+    if(!children->first)
+      ml666_st__d__node_ref(stb, parent);
   }else if(old_parent != parent){
     if(!children->first)
-      if(!ml666_st__d__node_ref(stb, parent))
-        return false;
+      ml666_st__d__node_ref(stb, parent);
     st_set_helper(stb, member);
   }
   member->parent = parent;
@@ -208,8 +200,8 @@ struct ml666_st_document* ml666_st__d__document_create(struct ml666_st_builder* 
     return 0;
   }
   memset(document, 0, sizeof(*document));
+  ml666_refcount_increment(&document->node.refcount);
   document->node.type = ML666_ST_NT_DOCUMENT;
-  document->node.refcount = 1;
   return document;
 }
 
@@ -221,8 +213,8 @@ struct ml666_st_element* ml666_st__d__element_create(struct ml666_st_builder* _s
     return 0;
   }
   memset(element, 0, sizeof(*element));
+  ml666_refcount_increment(&element->member.node.refcount);
   element->member.node.type = ML666_ST_NT_ELEMENT;
-  element->member.node.refcount = 1;
   if(!(element->name = ml666_hashed_buffer_set__lookup(stb->a.buffer_set, entry, copy_name ? ML666_HBS_M_ADD_COPY : ML666_HBS_M_ADD_TAKE))){
     ml666_st__d__node_put(&stb->public, &element->member.node);
     fprintf(stderr, "ml666_hashed_buffer_set::lookup failed\n");
@@ -239,8 +231,8 @@ struct ml666_st_content* ml666_st__d__content_create(struct ml666_st_builder* _s
     return 0;
   }
   memset(content, 0, sizeof(*content));
+  ml666_refcount_increment(&content->member.node.refcount);
   content->member.node.type = ML666_ST_NT_CONTENT;
-  content->member.node.refcount = 1;
   return content;
 }
 
@@ -252,8 +244,8 @@ struct ml666_st_comment* ml666_st__d__comment_create(struct ml666_st_builder* _s
     return 0;
   }
   memset(comment, 0, sizeof(*comment));
+  ml666_refcount_increment(&comment->member.node.refcount);
   comment->member.node.type = ML666_ST_NT_COMMENT;
-  comment->member.node.refcount = 1;
   return comment;
 }
 
