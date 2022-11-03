@@ -480,18 +480,31 @@ static inline struct ml666_st_children* ml666_st_element_get_children(struct ml6
  * so as long as the element is referenced, so is it's name. But reference it if you need it longer than that.
  *
  * \memberof ml666_st_element
+ * \param stb The simple tree builder instance used to create the node
+ * \param node The element whose name to retrive
+ * \returns The name of the element
  */
 static inline const struct ml666_hashed_buffer_set_entry* ml666_st_element_get_name(struct ml666_st_builder* stb, struct ml666_st_element* node){
   return stb->cb->element_get_name(stb, node);
 }
 /**
+ * Lookup an attribute, and optionally create it if it doesn't exist yet (see flags).
  * \memberof ml666_st_element
+ * \param stb The simple tree builder instance used to create the node
+ * \param element The element which owns the attribute
+ * \param name The name of the attribute
+ * \param flags see \ref ml666_st_attribute_lookup_flags
+ * \returns The Attribute if found, 0 otherwise. It also returns 0 if an attribute was to be created and that failed.
  */
 static inline struct ml666_st_attribute* ml666_st_attribute_lookup(struct ml666_st_builder* stb, struct ml666_st_element* element, const struct ml666_hashed_buffer* name, enum ml666_st_attribute_lookup_flags flags){
   return stb->cb->attribute_lookup(stb, element, name, flags);
 }
 /**
+ * Get the first attribute of the element.
  * \memberof ml666_st_element
+ * \param stb The simple tree builder instance used to create the node
+ * \param element The element which owns the attribute
+ * \returns The first attribute, or 0 if there is none
  */
 static inline struct ml666_st_attribute* ml666_st_attribute_get_first(const struct ml666_st_builder* stb, const struct ml666_st_element* element){
   return stb->cb->attribute_get_first(stb, element);
@@ -499,27 +512,40 @@ static inline struct ml666_st_attribute* ml666_st_attribute_get_first(const stru
 
 /**
  * \memberof ml666_st_content
- * @{
  */
 static inline bool ml666_st_content_set(struct ml666_st_builder* stb, struct ml666_st_content* content, struct ml666_buffer node){
   return stb->cb->content_set(stb, content, node);
 }
+/**
+ * \memberof ml666_st_content
+ */
 static inline struct ml666_buffer_ro ml666_st_content_get(struct ml666_st_builder* stb, const struct ml666_st_content* content){
   return stb->cb->content_get(stb, content);
 }
+/**
+ * \memberof ml666_st_content
+ */
 static inline struct ml666_buffer ml666_st_content_take(struct ml666_st_builder* stb, struct ml666_st_content* content){
   return stb->cb->content_take(stb, content);
 }
+/**
+ * \memberof ml666_st_content
+ */
 static inline bool ml666_st_comment_set(struct ml666_st_builder* stb, struct ml666_st_comment* comment, struct ml666_buffer node){
   return stb->cb->comment_set(stb, comment, node);
 }
+/**
+ * \memberof ml666_st_content
+ */
 static inline struct ml666_buffer_ro ml666_st_comment_get(struct ml666_st_builder* stb, const struct ml666_st_comment* comment){
   return stb->cb->comment_get(stb, comment);
 }
+/**
+ * \memberof ml666_st_content
+ */
 static inline struct ml666_buffer ml666_st_comment_take(struct ml666_st_builder* stb, struct ml666_st_comment* comment){
   return stb->cb->comment_take(stb, comment);
 }
-/** @} */
 
 /**
  * \memberof ml666_st_attribute

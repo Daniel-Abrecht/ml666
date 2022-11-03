@@ -313,7 +313,8 @@ static inline const struct ml666_hashed_buffer* ml666_hashed_buffer_set__peek(co
 }
 
 /**
- * Lookup the \ref ml666_hashed_buffer_set_entry matching the buffer. It will take a reference which needs to be released using \ref ml666_hashed_buffer_set__put.
+ * Lookup the \ref ml666_hashed_buffer_set_entry matching the buffer.
+ * It will take a reference which needs to be released using \ref ml666_hashed_buffer_set__put.
  * Depending on the mode parameter, it may create the entry if none is found.
  */
 static inline const ml666_hashed_buffer_set_entry* ml666_hashed_buffer_set__lookup(
