@@ -115,7 +115,7 @@ shell:
 	if [ -z "$$SHELL" ]; then SHELL="/bin/sh"; fi; \
 	PROMPT_COMMAND='if [ -z "$$PS_SET" ]; then PS_SET=1; PS1="(ml666) $$PS1"; fi' \
 	LD_LIBRARY_PATH="$$PWD/lib/$(TYPE)/" \
-	PATH="$$PWD/bin/$(TYPE)/:$$PATH" \
+	PATH="$$PWD/bin/$(TYPE)/:scripts/:$$PATH" \
 	MANPATH="$$PWD/build/docs/api/man/:$$(man -w)" \
 	  "$$SHELL"
 

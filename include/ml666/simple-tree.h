@@ -511,13 +511,24 @@ static inline struct ml666_st_attribute* ml666_st_attribute_get_first(const stru
 }
 
 /**
+ * Sets the content data of the content node.
+ * The data is contained in a ml666_buffer, it will not be dublicated, the content node takes ownership of the data.
+ * Any previousely set data will be freed.
  * \memberof ml666_st_content
+ * \param stb The simple tree builder instance used to create the node
+ * \param content The content node
+ * \param data The new data the content node is to be set to
+ * \returns true on success, false otherwise
  */
-static inline bool ml666_st_content_set(struct ml666_st_builder* stb, struct ml666_st_content* content, struct ml666_buffer node){
-  return stb->cb->content_set(stb, content, node);
+static inline bool ml666_st_content_set(struct ml666_st_builder* stb, struct ml666_st_content* content, struct ml666_buffer data){
+  return stb->cb->content_set(stb, content, data);
 }
 /**
+ * Get the content nodes data
  * \memberof ml666_st_content
+ * \param stb The simple tree builder instance used to create the node
+ * \param content The content node
+ * \returns The data from the node
  */
 static inline struct ml666_buffer_ro ml666_st_content_get(struct ml666_st_builder* stb, const struct ml666_st_content* content){
   return stb->cb->content_get(stb, content);

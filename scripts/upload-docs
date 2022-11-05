@@ -1,0 +1,13 @@
+set -e
+
+(
+  cd build/docs/api/
+  cadaver https://ml666-s.s.abrecht.li/docs/api/ -r <(
+    echo rmcol html
+    find html \( \
+      -type d -printf "mkdir %p/\n" , \
+      ! -type d -printf "put %p %p\n" \
+    \)
+    echo exit
+  )
+)
