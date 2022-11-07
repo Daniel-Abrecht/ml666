@@ -11,7 +11,7 @@
  * @{
  * \addtogroup ml666-tokenizer
  * @{
- * \addtogroup json-token-emmiter JSON Token Emmiter
+ * \addtogroup ml666-json-token-emmiter JSON Token Emmiter
  * Implements the \ref ml666-tokenizer on top of the \ref ml666-json-tokenizer.
  * @{
  */

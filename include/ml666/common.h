@@ -4,17 +4,17 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/** \addtogroup ml666-utils Utils
+ * @{
+ * \addtogroup ml666-buffer ml666_buffer API
+ * @{
+ */
+
 #ifdef ML666_BUILD
 #define ML666_EXPORT __attribute__((visibility("default")))
 #else
 #define ML666_EXPORT
 #endif
-
-/** \addtogroup utils Utils
- * @{
- * \addtogroup ml666-buffer ml666_buffer API
- * @{
- */
 
 /**
  * Holds arbitrary readonly binary data. If it holds a string,

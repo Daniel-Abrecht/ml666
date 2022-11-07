@@ -11,7 +11,7 @@
  * @{
  * \addtogroup ml666-tokenizer
  * @{
- * \addtogroup binary-token-emmiter Binary Token Emmiter
+ * \addtogroup ml666-binary-token-emmiter Binary Token Emmiter
  * Implements the \ref ml666-tokenizer on top of the \ref ml666-json-tokenizer.
  * Reads binary data and emmits an \ref ML666_TEXT token.
  * @{

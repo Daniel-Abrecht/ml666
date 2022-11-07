@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-/** \addtogroup utils Utils
+/** \addtogroup ml666-utils Utils
  * @{ */
 
 #define ML666_B36 "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ" ///< Digits for base36 numbers

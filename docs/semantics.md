@@ -1,8 +1,5 @@
 # ML666 semantics
 
-This is about the format and how tokenizers & parsers are to treat it in general. For details about the implementation
-provided in this repo, see [ml666.md](ml666.md).
-
 The formal syntax assumes each character is an 8 bit byte. For the values of characters in the ABNF syntax, ASCII is used.
 However, the encoded ml666 document itself must be valid, normalized utf-8 data without any utf-16 surrogates,
 and without any noncharacter codepoints, with the exception of the optional (and *not* recommended) utf8 BOM.
@@ -22,6 +19,8 @@ the `TAG` token of the corresponding `element` token. The tokenizer doesn't have
 The content of the returned tokens should not contain any raw escape sequences, instead, the tokenizer should interpret
 them when it encounters them. A tokenizer may return a token in a streaming fashion, it may return them as chunks, or as
 a whole, this is left to the implementation.
+
+There is also a railroad diagram for the syntax, but it doesn't yet sjhow the cardinalities: [syntax.xhtml](syntax.xhtml)
 
 There are additional special semantics for string tokens & comments,
 the tokenizer shall apply the following additional transformations:
