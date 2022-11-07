@@ -127,6 +127,8 @@ build/docs/api/.done: $(HEADERS) Doxyfile
 	rm -rf build/docs/api/
 	-doxygen -q
 	-cp -r docs/. build/docs/api/html/
+	-ln -sf . build/docs/api/html/docs
+	-ln -sf . build/docs/api/html/test
 	-touch "$@"
 
 clean-docs:

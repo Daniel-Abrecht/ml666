@@ -6,8 +6,6 @@ The name ML666 was choosen, because I couldn't find an unclaimed 3 or 4 letter a
 
 The Project Homepage, along with some prebuilt documentation, can be found at [https://ml666-s.s.abrecht.li/](https://ml666-s.s.abrecht.li/).
 
-For details about the implementation in this repo, see [docs/ml666.md](docs/ml666.md).
-
 For the formal syntax description, see [docs/syntax.abnf](docs/syntax.abnf) and [docs/syntax.xhtml](docs/syntax.xhtml).
 
 For the semantics for parsers & tokenizers, see [docs/semantics.md](docs/semantics.md).
