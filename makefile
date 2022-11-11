@@ -41,20 +41,23 @@ endif
 
 OBJECTS := $(patsubst %,build/$(TYPE)/o/%.o,$(SOURCES))
 
-.PHONY: all bin lib docs clean get-bin get-lib install uninstall shell test clean-docs install-docs uninstall-docs
+B-TS := bin/$(TYPE)/testsuite
+
+.PHONY: all bin lib docs clean get//bin get//lib install uninstall shell test clean//docs install//docs uninstall//docs
 
 all: bin lib docs
 
 bin: bin/$(TYPE)/ml666-tokenizer-example \
-     bin/$(TYPE)/ml666
+     bin/$(TYPE)/ml666 \
+     bin/$(TYPE)/testsuite
 
 lib: lib/$(TYPE)/libml666.a \
      lib/$(TYPE)/libml666.so
 
-get-bin:
+get//bin:
 	@echo bin/$(TYPE)/
 
-get-lib:
+get//lib:
 	@echo lib/$(TYPE)/
 
 bin/$(TYPE)/%: build/$(TYPE)/o/src/main/%.c.o lib/$(TYPE)/libml666.so
@@ -74,13 +77,15 @@ build/$(TYPE)/o/%.c.o: %.c makefile $(HEADERS)
 	mkdir -p $(dir $@)
 	$(CC) -fPIC -c -o $@ $(DFLAGS) $(CFLAGS) $<
 
-build/test/%: test/%.ml666 test/%.result bin/$(TYPE)/ml666-tokenizer-example
+build/test/tokenizer/%: test/%.ml666 test/%.tokenizer-result bin/$(TYPE)/ml666-tokenizer-example
 	mkdir -p $(dir $@)
 	LD_LIBRARY_PATH="$$PWD/lib/$(TYPE)/" \
-	bin/$(TYPE)/ml666-tokenizer-example <"$<" >"$@.result"
-	diff "$@.result" "$(word 2,$^)" && touch "$@"
+	bin/$(TYPE)/ml666-tokenizer-example <"$<" >"$@"
 
-clean: clean-docs
+test//tokenizer/%: build/test/tokenizer/% test/%.tokenizer-result $(B-TS)
+	$(B-TS) "$(notdir $@)" diff "$<" "$(word 2,$^)"
+
+clean: clean//docs
 	rm -rf build/$(TYPE)/ bin/$(TYPE)/ lib/$(TYPE)/
 
 install:
@@ -102,12 +107,12 @@ uninstall:
 	rm -f "$(DESTDIR)$(prefix)/bin/ml666"
 	rm -rf "$(DESTDIR)$(prefix)/include/ml666/"
 
-install-docs:
+install//docs:
 	mkdir -p "$(DESTDIR)$(prefix)/share/man/man3/"
 	rm -f "$(DESTDIR)$(prefix)/share/man/man3/"ml666*.3
 	cp build/docs/api/man/man3/ml666*.3 "$(DESTDIR)$(prefix)/share/man/man3/"
 
-uninstall-docs:
+uninstall//docs:
 	rm -f "$(DESTDIR)$(prefix)/share/man/man3/"ml666*.3
 
 shell:
@@ -119,7 +124,11 @@ shell:
 	MANPATH="$$PWD/build/docs/api/man/:$$(man -w)" \
 	  "$$SHELL"
 
-test: build/test/example
+test//tokenizer: $(B-TS)
+	$(B-TS) "tokenizer" $(MAKE) test//tokenizer//example
+
+test: $(B-TS)
+	$(B-TS) "ml666" $(MAKE) test//tokenizer
 
 docs: build/docs/api/.done
 
@@ -129,7 +138,8 @@ build/docs/api/.done: $(HEADERS) Doxyfile
 	-cp -r docs/. build/docs/api/html/
 	-ln -sf . build/docs/api/html/docs
 	-ln -sf . build/docs/api/html/test
+	-cp test/example.ml666 build/docs/api/html/test/
 	-touch "$@"
 
-clean-docs:
+clean//docs:
 	rm -rf build/docs/api/

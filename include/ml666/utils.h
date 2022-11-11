@@ -376,7 +376,6 @@ ML666_EXPORT struct ml666_hashed_buffer_set* ml666_default_hashed_buffer_set__cr
 
 /** @} */
 
-
 // other stuff
 
 #if defined(__STDC__) && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
