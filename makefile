@@ -1,7 +1,7 @@
 .SECONDARY:
 
 HEADERS := $(shell find include -type f -name "*.h" -not -name ".*")
-SOURCES := $(shell find src -iname "*.c")
+SOURCES := $(shell find src -type f -iname "*.c")
 
 SONAME = ml666
 MAJOR  = 0
@@ -43,16 +43,19 @@ OBJECTS := $(patsubst %,build/$(TYPE)/o/%.o,$(SOURCES))
 
 B-TS := bin/$(TYPE)/testsuite
 
+BINS := $(patsubst src/main/%.c,bin/$(TYPE)/%,$(filter src/main/%.c,$(SOURCES)))
+
 .PHONY: all bin lib docs clean get//bin get//lib install uninstall shell test clean//docs install//docs uninstall//docs
 
-all: bin lib docs
+all: bin lib docs test
 
-bin: bin/$(TYPE)/ml666-tokenizer-example \
-     bin/$(TYPE)/ml666 \
-     bin/$(TYPE)/testsuite
+x:
+	echo $(BINS)
 
-lib: lib/$(TYPE)/libml666.a \
-     lib/$(TYPE)/libml666.so
+bin: $(BINS)
+
+lib: lib/$(TYPE)/lib$(SONAME).a \
+     lib/$(TYPE)/lib$(SONAME).so
 
 get//bin:
 	@echo bin/$(TYPE)/
@@ -60,11 +63,11 @@ get//bin:
 get//lib:
 	@echo lib/$(TYPE)/
 
-bin/$(TYPE)/%: build/$(TYPE)/o/src/main/%.c.o lib/$(TYPE)/libml666.so
+bin/$(TYPE)/%: build/$(TYPE)/o/src/main/%.c.o lib/$(TYPE)/lib$(SONAME).so
 	mkdir -p $(dir $@)
-	$(CC) -o $@ $(LDFLAGS) $< -Llib/$(TYPE)/ -lml666
+	$(CC) -o $@ $(LDFLAGS) $< -Llib/$(TYPE)/ -l$(SONAME)
 
-lib/$(TYPE)/lib$(SONAME).so: lib/$(TYPE)/libml666.a
+lib/$(TYPE)/lib$(SONAME).so: lib/$(TYPE)/lib$(SONAME).a
 	ln -sf "lib$(SONAME).so" "$@.0"
 	$(CC) -o $@ -Wl,--no-undefined -Wl,-soname,lib$(SONAME).so.$(MAJOR) --shared -fPIC $(LDFLAGS) -Wl,--whole-archive $^ -Wl,--no-whole-archive
 

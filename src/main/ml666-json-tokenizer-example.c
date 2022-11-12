@@ -22,7 +22,7 @@ int main(){
         tokenizer->match.length
       );
       fflush(stdout);
-      ml666__print_buf_escaped(1, tokenizer->match);
+      ml666__print_buf_escaped(1, tokenizer->match.ro);
       printf("\n");
     }
   }
