@@ -1,7 +1,7 @@
 .SECONDARY:
 
 HEADERS := $(shell find include -type f -name "*.h" -not -name ".*")
-SOURCES := $(shell find src -type f -iname "*.c")
+SOURCES := $(shell find src test -type f -iname "*.c")
 
 SONAME = ml666
 MAJOR  = 0
@@ -26,6 +26,12 @@ CFLAGS  += -fsanitize=address,undefined
 LDFLAGS += -fsanitize=address,undefined
 endif
 
+ifdef coverage
+TYPE := $(TYPE)-coverage
+CFLAGS  += --coverage
+LDFLAGS += --coverage
+endif
+
 CFLAGS  += --std=c17
 CFLAGS  += -Iinclude
 CFLAGS  += -Wall -Wextra -pedantic -Werror
@@ -43,7 +49,8 @@ OBJECTS := $(patsubst %,build/$(TYPE)/o/%.o,$(SOURCES))
 
 B-TS := bin/$(TYPE)/testsuite
 
-BINS := $(patsubst src/main/%.c,bin/$(TYPE)/%,$(filter src/main/%.c,$(SOURCES)))
+BINS  := $(patsubst src/main/%.c,bin/$(TYPE)/%,$(filter src/main/%.c,$(SOURCES)))
+TESTS := $(patsubst test/%.c,%,$(filter test/%.c,$(SOURCES)))
 
 .PHONY: all bin lib docs clean get//bin get//lib install uninstall shell test clean//docs install//docs uninstall//docs
 
@@ -64,11 +71,15 @@ bin/$(TYPE)/%: build/$(TYPE)/o/src/main/%.c.o lib/$(TYPE)/lib$(SONAME).so
 	mkdir -p $(dir $@)
 	$(CC) -o $@ $(LDFLAGS) $< -Llib/$(TYPE)/ -l$(SONAME)
 
+build/$(TYPE)/bin/%: build/$(TYPE)/o/test/%.c.o lib/$(TYPE)/lib$(SONAME).so
+	mkdir -p $(dir $@)
+	$(CC) -o $@ $(LDFLAGS) $< -Llib/$(TYPE)/ -l$(SONAME)
+
 lib/$(TYPE)/lib$(SONAME).so: lib/$(TYPE)/lib$(SONAME).a
 	ln -sf "lib$(SONAME).so" "$@.0"
 	$(CC) -o $@ -Wl,--no-undefined -Wl,-soname,lib$(SONAME).so.$(MAJOR) --shared -fPIC $(LDFLAGS) -Wl,--whole-archive $^ -Wl,--no-whole-archive
 
-lib/$(TYPE)/lib$(SONAME).a: $(filter-out build/$(TYPE)/o/src/main/%,$(OBJECTS))
+lib/$(TYPE)/lib$(SONAME).a: $(filter-out build/$(TYPE)/o/src/main/%,$(filter-out build/$(TYPE)/o/test/%,$(OBJECTS)))
 	mkdir -p $(dir $@)
 	rm -f $@
 	$(AR) q $@ $^
@@ -77,28 +88,34 @@ build/$(TYPE)/o/%.c.o: %.c makefile $(HEADERS)
 	mkdir -p $(dir $@)
 	$(CC) -fPIC -c -o $@ $(DFLAGS) $(CFLAGS) $<
 
-build/test/tokenizer/%: test/%.ml666 test/%.tokenizer-result bin/$(TYPE)/ml666-tokenizer-example
+build/$(TYPE)/test/tokenizer/%: test/%.ml666 test/%.tokenizer-result bin/$(TYPE)/ml666-tokenizer-example
 	mkdir -p $(dir $@)
 	LD_LIBRARY_PATH="$$PWD/lib/$(TYPE)/" \
 	bin/$(TYPE)/ml666-tokenizer-example <"$<" >"$@"
 
-test//tokenizer/%: build/test/tokenizer/% test/%.tokenizer-result $(B-TS)
+test//tokenizer/%: build/$(TYPE)/test/tokenizer/% test/%.tokenizer-result $(B-TS)
 	$(B-TS) "$(@:test//tokenizer//%=%)" diff -q "$<" "$(word 2,$^)"
 
 test//tokenizer: $(B-TS)
 	$(B-TS) "tokenizer" $(MAKE) $(patsubst test/%.tokenizer-result,test//tokenizer//%,$(wildcard test/*.tokenizer-result))
 
-build/test/json/%: test/%.ml666 test/%.json bin/$(TYPE)/ml666
+build/$(TYPE)/test/json/%: test/%.ml666 test/%.json bin/$(TYPE)/ml666
 	mkdir -p $(dir $@)
 	# Normalizing json using jq. This way, changes to the output don't matter so long as it's still the same data
 	LD_LIBRARY_PATH="$$PWD/lib/$(TYPE)/" \
 	bin/$(TYPE)/ml666 <"$<" --output-format json | jq -c >"$@"
 
-test//json//%: build/test/json/% test/%.json $(B-TS)
+test//json//%: build/$(TYPE)/test/json/% test/%.json $(B-TS)
 	$(B-TS) "$(@:test//json//%=%)" diff -q "$<" "$(word 2,$^)"
 
 test//json: $(B-TS)
 	$(B-TS) "JSON" $(MAKE) $(patsubst test/%.json,test//json//%,$(wildcard test/*.json test/**/*.json))
+
+test//api//%: build/$(TYPE)/bin/% $(B-TS)
+	$(B-TS) "$(@:test//api//%=%)" "$<"
+
+test//api: $(B-TS)
+	$(B-TS) "API" $(MAKE) $(TESTS:%=test//api//%)
 
 clean: clean//docs
 	rm -rf build/$(TYPE)/ bin/$(TYPE)/ lib/$(TYPE)/
@@ -140,7 +157,14 @@ shell:
 	  "$$SHELL"
 
 test: $(B-TS)
-	$(B-TS) "ml666" $(MAKE) test//tokenizer test//json
+	$(B-TS) "ml666" $(MAKE) test//tokenizer test//json test//api
+
+do-coverage:
+	-$(MAKE) test
+	gcov -n $$(find build/$(TYPE)/ -type f -iname '*.gcno')
+
+coverage:
+	$(MAKE) coverage=1 do-coverage
 
 docs: build/docs/api/.done
 

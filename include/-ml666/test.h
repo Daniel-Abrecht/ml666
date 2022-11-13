@@ -1,12 +1,20 @@
 #ifndef ML666_TEST_H
 #define ML666_TEST_H
 
+// This is an internal header
+
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <errno.h>
 #include <unistd.h>
 
-/** \addtogroup ml666-utils Utils
- * @{ */
+/**
+ * \addtogroup ml666-utils Utils
+ * @{
+ */
 
 /**
  * \addtogroup ml666-test Test Utils
@@ -53,6 +61,7 @@ static inline bool ml666_testcase_result(int fd, const char* name, const char* r
   }
   return true;
 }
+
 
 /** @} */
 /** @} */
