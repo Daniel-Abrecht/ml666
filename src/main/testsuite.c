@@ -130,7 +130,7 @@ static void final_message_handler(const char* ns, size_t msglen, const char msg[
     rv->value += 1;
     it->total += 1;
   }
-  if(strcmp(msg, "success") && strcmp(msg, "skipped"))
+  if(strncmp(msg, "success", msglen) && strncmp(msg, "skipped", msglen))
     failed = true;
 }
 

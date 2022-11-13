@@ -83,7 +83,7 @@ build/test/tokenizer/%: test/%.ml666 test/%.tokenizer-result bin/$(TYPE)/ml666-t
 	bin/$(TYPE)/ml666-tokenizer-example <"$<" >"$@"
 
 test//tokenizer/%: build/test/tokenizer/% test/%.tokenizer-result $(B-TS)
-	$(B-TS) "$(notdir $@)" diff -q "$<" "$(word 2,$^)"
+	$(B-TS) "$(@:test//tokenizer//%=%)" diff -q "$<" "$(word 2,$^)"
 
 test//tokenizer: $(B-TS)
 	$(B-TS) "tokenizer" $(MAKE) $(patsubst test/%.tokenizer-result,test//tokenizer//%,$(wildcard test/*.tokenizer-result))
@@ -95,10 +95,10 @@ build/test/json/%: test/%.ml666 test/%.json bin/$(TYPE)/ml666
 	bin/$(TYPE)/ml666 <"$<" --output-format json | jq -c >"$@"
 
 test//json//%: build/test/json/% test/%.json $(B-TS)
-	$(B-TS) "$(notdir $@)" diff -q "$<" "$(word 2,$^)"
+	$(B-TS) "$(@:test//json//%=%)" diff -q "$<" "$(word 2,$^)"
 
 test//json: $(B-TS)
-	$(B-TS) "JSON" $(MAKE) $(patsubst test/%.json,test//json//%,$(wildcard test/*.json))
+	$(B-TS) "JSON" $(MAKE) $(patsubst test/%.json,test//json//%,$(wildcard test/*.json test/**/*.json))
 
 clean: clean//docs
 	rm -rf build/$(TYPE)/ bin/$(TYPE)/ lib/$(TYPE)/
