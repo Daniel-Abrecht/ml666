@@ -47,7 +47,7 @@ BINS := $(patsubst src/main/%.c,bin/$(TYPE)/%,$(filter src/main/%.c,$(SOURCES)))
 
 .PHONY: all bin lib docs clean get//bin get//lib install uninstall shell test clean//docs install//docs uninstall//docs
 
-all: bin lib docs test
+all: bin lib docs
 
 bin: $(BINS)
 

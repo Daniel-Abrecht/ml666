@@ -1,0 +1,5 @@
+// This is a simple single line comment. It ends with a newline.
+/*
+This is a simple multiline comment.
+It will be merged with the previous comment.
+*/
