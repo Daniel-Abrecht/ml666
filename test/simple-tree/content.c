@@ -1,6 +1,9 @@
-#include <-ml666/test.h>
+#include <-ml666/test.x>
+#include <ml666/simple-tree-builder.h>
 
-int main(){
-  ml666_testcase_result(-1, "Test", "success");
+ML666_TEST("set"){
+  struct ml666_st_builder* stb = ml666_st_builder_create(0);
+  // TODO
+  ml666_st_builder_destroy(stb);
   return 0;
 }

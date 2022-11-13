@@ -112,7 +112,11 @@ test//json: $(B-TS)
 	$(B-TS) "JSON" $(MAKE) $(patsubst test/%.json,test//json//%,$(wildcard test/*.json test/**/*.json))
 
 test//api//%: build/$(TYPE)/bin/% $(B-TS)
-	$(B-TS) "$(@:test//api//%=%)" "$<"
+	$(B-TS) "$(@:test//api//%=%)" sh -c ' \
+	  "$<" | while read x; \
+	    do $(B-TS) "$$x" "$<" "$$x"; \
+	  done \
+	'
 
 test//api: $(B-TS)
 	$(B-TS) "API" $(MAKE) $(TESTS:%=test//api//%)
