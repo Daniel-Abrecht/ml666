@@ -540,19 +540,19 @@ static inline struct ml666_buffer ml666_st_content_take(struct ml666_st_builder*
   return stb->cb->content_take(stb, content);
 }
 /**
- * \memberof ml666_st_content
+ * \memberof ml666_st_comment
  */
 static inline bool ml666_st_comment_set(struct ml666_st_builder* stb, struct ml666_st_comment* comment, struct ml666_buffer node){
   return stb->cb->comment_set(stb, comment, node);
 }
 /**
- * \memberof ml666_st_content
+ * \memberof ml666_st_comment
  */
 static inline struct ml666_buffer_ro ml666_st_comment_get(struct ml666_st_builder* stb, const struct ml666_st_comment* comment){
   return stb->cb->comment_get(stb, comment);
 }
 /**
- * \memberof ml666_st_content
+ * \memberof ml666_st_comment
  */
 static inline struct ml666_buffer ml666_st_comment_take(struct ml666_st_builder* stb, struct ml666_st_comment* comment){
   return stb->cb->comment_take(stb, comment);
