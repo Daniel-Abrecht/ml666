@@ -31,7 +31,7 @@ static unsigned hash_to_bucket(uint64_t hash){
 bool ml666_buffer__dup_p(struct ml666_buffer__dup_args a){
   char* data = 0;
   if(a.src.length){
-    data = a.malloc ? a.malloc(a.that, a.src.length) : malloc(a.src.length);
+    data = (a.malloc ? a.malloc : ml666__d__malloc)(a.that, a.src.length);
     if(!data){
       perror("*malloc failed");
       return false;
@@ -86,7 +86,7 @@ bool ml666_buffer__append_p(struct ml666_buffer__append_args args){
   const size_t new_size = old_size + args.data.length;
   if(new_size < args.data.length)
     return false;
-  char* content = args.realloc ? args.realloc(args.that, args.buffer->data, new_size) : realloc(args.buffer->data, new_size);
+  char* content = (args.realloc ? args.realloc : ml666__d__realloc)(args.that, args.buffer->data, new_size);
   if(!content)
     return false;
   args.buffer->data = content;
@@ -279,16 +279,19 @@ static const struct ml666_hashed_buffer_set_cb ml666_default_hashed_buffer_cb = 
   .destroy = ml666_hashed_buffer_set__d__destroy,
 };
 
+__attribute__((weak))
 void* ml666__d__malloc(void* that, size_t size){
   (void)that;
   return malloc(size);
 }
 
+__attribute__((weak))
 void* ml666__d__realloc(void* that, void* data, size_t size){
   (void)that;
   return realloc(data, size);
 }
 
+__attribute__((weak))
 void ml666__d__free(void* that, void* data){
   (void)that;
   free(data);
@@ -411,4 +414,10 @@ bool ml666_utf8_validate(struct ml666_streaming_utf8_validator*restrict const v,
 bad:
   v->index = 0;
   return false;
+}
+
+bool ml666_buffer__equal(struct ml666_buffer_ro a, struct ml666_buffer_ro b){
+  if(a.length != b.length)
+    return false;
+  return !memcmp(a.data, b.data, a.length);
 }

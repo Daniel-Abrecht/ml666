@@ -272,7 +272,13 @@ int main(int argc, char* argv[]){
     break;
   }
   if(!result){
-    if(WEXITSTATUS(status) == 0){
+    if(WIFEXITED(status)){
+      status = WEXITSTATUS(status);
+    }else if(WIFSIGNALED(status)){
+      status = WTERMSIG(status);
+      if(status) status = 10;
+    }else status = 10;
+    if(status == 0){
       result = "success";
     }else{
       result = "failed";

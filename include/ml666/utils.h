@@ -141,6 +141,8 @@ ML666_EXPORT ml666_buffer__cb__clear_p ml666_buffer__clear_p;
  */
 #define ml666_buffer__clear(...) ml666_buffer__clear_p((struct ml666_buffer__clear_args){__VA_ARGS__})
 
+ML666_EXPORT bool ml666_buffer__equal(struct ml666_buffer_ro a, struct ml666_buffer_ro b);
+
 /** @} */
 
 /** \addtogroup ml666-hashed-buffer ml666_hashed_buffer API
