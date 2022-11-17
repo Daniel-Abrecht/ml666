@@ -39,3 +39,16 @@ ML666_TEST("free-after-set"){
   ml666_st_content_set(stb, content, dest);
   return 0;
 }
+
+ML666_TEST("take"){
+  struct ml666_buffer dest;
+  ml666_buffer__dup(&dest, ML666_BUFFER_STR("Hello World!"));
+  ml666_st_content_set(stb, content, dest);
+  struct ml666_buffer current = ml666_st_content_take(stb, content);
+  if(!ml666_buffer__equal(current.ro, dest.ro))
+    return 1;
+  if(ml666_st_content_get(stb, content).length)
+    return 2;
+  ml666_buffer__clear(&current);
+  return 0;
+}

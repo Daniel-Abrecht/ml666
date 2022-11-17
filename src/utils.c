@@ -57,11 +57,7 @@ bool ml666_hashed_buffer__dup_p(struct ml666_hashed_buffer__dup_args a){
 }
 
 bool ml666_buffer__clear_p(struct ml666_buffer__clear_args a){
-  if(a.free){
-    a.free(a.that, a.buffer->data);
-  }else{
-    free(a.buffer->data);
-  }
+  (a.free ? a.free : ml666__d__free)(a.that, a.buffer->data);
   a.buffer->data = 0;
   a.buffer->length = 0;
   return true;
