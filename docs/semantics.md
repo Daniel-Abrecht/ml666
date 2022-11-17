@@ -20,7 +20,7 @@ The content of the returned tokens should not contain any raw escape sequences, 
 them when it encounters them. A tokenizer may return a token in a streaming fashion, it may return them as chunks, or as
 a whole, this is left to the implementation.
 
-There is also a railroad diagram for the syntax, but it doesn't yet sjhow the cardinalities: [syntax.xhtml](syntax.xhtml)
+There is also a railroad diagram for the syntax, but it doesn't yet show the cardinalities: [syntax.xhtml](syntax.xhtml)
 
 There are additional special semantics for string tokens & comments,
 the tokenizer shall apply the following additional transformations:
@@ -38,6 +38,7 @@ the tokenizer shall apply the following additional transformations:
 
 A tokenizer or parser may or may not choose to emit comments. It is also up to the implementation, if different adjacent strings where allowed are
 merged into a single token or not, or even further split up. An implementation may or may not provide a means determine if a string or comment token
-is already complete, and it may or may not provide a means to determine the encoding the string had.
+is already complete, and it may or may not provide a means to determine the encoding the string had, but it must ensure strings can be handled
+the same regardless of their encoding.
 
 A tokenizer must provide a means to determine if an attribute is complete, because there can be multiple adjacent value-less attributes.
